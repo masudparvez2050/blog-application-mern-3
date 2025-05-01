@@ -81,7 +81,7 @@ Before pushing any changes, follow these steps:
 
 1️⃣ **Pull the latest changes** before starting work:
    ```sh
-   git pull origin develop
+   git pull origin main
    ```
 
 2️⃣ **Create a new branch** based on the pages or features or fix:
