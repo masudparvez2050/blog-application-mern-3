@@ -238,12 +238,10 @@ exports.facebookAuth = async (req, res) => {
     });
   } catch (error) {
     console.error("Facebook auth error:", error);
-    res
-      .status(500)
-      .json({
-        message: "Facebook authentication failed",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Facebook authentication failed",
+      error: error.message,
+    });
   }
 };
 

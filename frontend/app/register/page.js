@@ -301,7 +301,9 @@ function RegisterContent() {
 
             <div className="mt-6 grid grid-cols-2 gap-3">
               <div>
-                <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+                <GoogleOAuthProvider
+                  clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+                >
                   <GoogleLogin
                     onSuccess={handleGoogleLogin}
                     onError={() =>
