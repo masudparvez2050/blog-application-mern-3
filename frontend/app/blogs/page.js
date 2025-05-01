@@ -340,7 +340,7 @@ export default function BlogsList() {
               No posts found
             </h3>
             <p className="text-gray-600">
-              Try adjusting your search or filter to find what you're looking
+              Try adjusting your search or filter to find what you&apos;re looking
               for.
             </p>
           </div>

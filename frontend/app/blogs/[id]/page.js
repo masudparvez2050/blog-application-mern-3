@@ -201,7 +201,7 @@ export default function BlogPost({ params }) {
 
           <div className="mt-8 p-4 bg-blue-50 rounded-lg">
             <p className="text-blue-800">
-              This is demo content shown because the original post couldn't be
+              This is demo content shown because the original post couldn&apos;t be
               found.{" "}
               <Link href="/blogs" className="font-medium underline">
                 Browse all articles
@@ -328,7 +328,7 @@ export default function BlogPost({ params }) {
 
           <div className="mt-8 p-4 bg-blue-50 rounded-lg">
             <p className="text-blue-800">
-              This is demo content shown because the original post couldn't be
+              This is demo content shown because the original post couldn&apos;t be
               found.{" "}
               <Link href="/blogs" className="font-medium underline">
                 Browse all articles
