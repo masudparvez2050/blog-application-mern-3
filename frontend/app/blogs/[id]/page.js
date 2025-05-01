@@ -27,7 +27,7 @@ export default function BlogPost({ params }) {
       try {
         setLoading(true);
         const postResponse = await fetch(
-          `http://localhost:5000/api/posts/${id}`
+          `${process.env.NEXT_PUBLIC_API_URL}/api/posts/${id}`
         );
 
         if (!postResponse.ok) {
@@ -39,7 +39,7 @@ export default function BlogPost({ params }) {
 
         // Fetch comments for this post
         const commentsResponse = await fetch(
-          `http://localhost:5000/api/comments/post/${id}`
+          `${process.env.NEXT_PUBLIC_API_URL}/api/comments/post/${id}`
         );
         if (commentsResponse.ok) {
           const commentsData = await commentsResponse.json();
@@ -79,7 +79,7 @@ export default function BlogPost({ params }) {
 
     try {
       setSubmitting(true);
-      const response = await fetch("http://localhost:5000/api/comments", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/comments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../../context/AuthContext";
@@ -34,26 +34,7 @@ export default function CommentManagement() {
 
   const commentsPerPage = 10;
 
-  useEffect(() => {
-    // Redirect if not authenticated or not an admin
-    if (!loading && (!isAuthenticated || !isAdmin)) {
-      router.push("/login?redirect=/admin/comments");
-      return;
-    }
-
-    // Fetch comments
-    fetchComments();
-  }, [
-    isAuthenticated,
-    isAdmin,
-    loading,
-    router,
-    currentPage,
-    searchTerm,
-    filterStatus,
-  ]);
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
       setIsLoading(true);
       const token = localStorage.getItem("token");
@@ -65,10 +46,10 @@ export default function CommentManagement() {
       });
 
       const response = await fetch(
-        `http://localhost:5000/api/admin/comments?${queryParams}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/comments?${queryParams}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -89,7 +70,27 @@ export default function CommentManagement() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentPage, filterStatus, searchTerm, commentsPerPage]);
+
+  useEffect(() => {
+    // Redirect if not authenticated or not an admin
+    if (!loading && (!isAuthenticated || !isAdmin)) {
+      router.push("/login?redirect=/admin/comments");
+      return;
+    }
+
+    // Fetch comments
+    fetchComments();
+  }, [
+    isAuthenticated,
+    isAdmin,
+    loading,
+    router,
+    currentPage,
+    searchTerm,
+    filterStatus,
+    fetchComments,
+  ]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -118,7 +119,7 @@ export default function CommentManagement() {
     if (!selectedComment || !actionType) return;
 
     const token = localStorage.getItem("token");
-    let endpoint = `http://localhost:5000/api/comments/${selectedComment._id}`;
+    let endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/comments/${selectedComment._id}`;
     let method = "PUT";
     let body = {};
 

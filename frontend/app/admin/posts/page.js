@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -46,6 +46,34 @@ export default function PostsManagement() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
+  const fetchPosts = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/posts?page=${currentPage}&limit=10&sortField=${sortField}&sortDirection=${sortDirection}&status=${filterStatus}&search=${searchTerm}`,
+        {
+          headers: {
+        Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setPosts(data.posts);
+        setTotalPages(data.totalPages);
+      } else {
+        throw new Error("Failed to fetch posts");
+      }
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      setErrorMessage("Failed to load posts. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentPage, sortField, sortDirection, filterStatus, searchTerm]);
+
   useEffect(() => {
     // Redirect if not authenticated or not an admin
     if (!loading && (!isAuthenticated || !isAdmin)) {
@@ -64,35 +92,8 @@ export default function PostsManagement() {
     sortField,
     sortDirection,
     filterStatus,
+    fetchPosts,
   ]);
-
-  const fetchPosts = async () => {
-    try {
-      setIsLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/admin/posts?page=${currentPage}&limit=10&sortField=${sortField}&sortDirection=${sortDirection}&status=${filterStatus}&search=${searchTerm}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setPosts(data.posts);
-        setTotalPages(data.totalPages);
-      } else {
-        throw new Error("Failed to fetch posts");
-      }
-    } catch (error) {
-      console.error("Error fetching posts:", error);
-      setErrorMessage("Failed to load posts. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -166,23 +167,23 @@ export default function PostsManagement() {
 
       switch (modalAction) {
         case "delete":
-          endpoint = `http://localhost:5000/api/admin/posts/${selectedPost._id}`;
+          endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/posts/${selectedPost._id}`;
           method = "DELETE";
           break;
         case "approve":
-          endpoint = `http://localhost:5000/api/admin/posts/${selectedPost._id}/status`;
+          endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/posts/${selectedPost._id}/status`;
           body = { status: "published" };
           break;
         case "reject":
-          endpoint = `http://localhost:5000/api/admin/posts/${selectedPost._id}/status`;
+          endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/posts/${selectedPost._id}/status`;
           body = { status: "rejected" };
           break;
         case "feature":
-          endpoint = `http://localhost:5000/api/admin/posts/${selectedPost._id}/feature`;
+          endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/posts/${selectedPost._id}/feature`;
           body = { isFeatured: true };
           break;
         case "unfeature":
-          endpoint = `http://localhost:5000/api/admin/posts/${selectedPost._id}/feature`;
+          endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/posts/${selectedPost._id}/feature`;
           body = { isFeatured: false };
           break;
         default:

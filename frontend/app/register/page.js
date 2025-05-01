@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
@@ -8,7 +8,8 @@ import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { motion } from "framer-motion";
 import { FaFacebook } from "react-icons/fa";
 
-export default function Register() {
+// Component to handle search params retrieval
+function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get("redirect") || "/dashboard";
@@ -356,5 +357,26 @@ export default function Register() {
         </motion.div>
       </motion.div>
     </div>
+  );
+}
+
+// Loading fallback component
+function RegisterLoadingFallback() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      <div className="max-w-md w-full text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+// Main component that wraps with Suspense
+export default function Register() {
+  return (
+    <Suspense fallback={<RegisterLoadingFallback />}>
+      <RegisterContent />
+    </Suspense>
   );
 }

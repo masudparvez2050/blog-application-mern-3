@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/auth/register", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -92,11 +92,11 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:5000/api/auth/oauth/${provider}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/oauth/${provider}`,
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+        "Content-Type": "application/json",
           },
           body: JSON.stringify({ accessToken }),
         }
@@ -138,7 +138,7 @@ export const AuthProvider = ({ children }) => {
 
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/users/profile", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

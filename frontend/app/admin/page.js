@@ -50,10 +50,10 @@ export default function AdminDashboard() {
       setIsLoading(true);
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:5000/api/admin/dashboard",
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/dashboard`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
           },
         }
       );

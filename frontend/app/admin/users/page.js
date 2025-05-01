@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -40,34 +40,15 @@ export default function UsersManagement() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  useEffect(() => {
-    // Redirect if not authenticated or not an admin
-    if (!loading && (!isAuthenticated || !isAdmin)) {
-      router.push("/login?redirect=/admin/users");
-      return;
-    }
-
-    // Fetch users
-    fetchUsers();
-  }, [
-    isAuthenticated,
-    isAdmin,
-    loading,
-    router,
-    currentPage,
-    sortField,
-    sortDirection,
-  ]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setIsLoading(true);
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/admin/users?page=${currentPage}&limit=10&sortField=${sortField}&sortDirection=${sortDirection}&search=${searchTerm}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/users?page=${currentPage}&limit=10&sortField=${sortField}&sortDirection=${sortDirection}&search=${searchTerm}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -85,7 +66,27 @@ export default function UsersManagement() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentPage, sortField, sortDirection, searchTerm]);
+
+  useEffect(() => {
+    // Redirect if not authenticated or not an admin
+    if (!loading && (!isAuthenticated || !isAdmin)) {
+      router.push("/login?redirect=/admin/users");
+      return;
+    }
+
+    // Fetch users
+    fetchUsers();
+  }, [
+    isAuthenticated,
+    isAdmin,
+    loading,
+    router,
+    currentPage,
+    sortField,
+    sortDirection,
+    fetchUsers,
+  ]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -153,21 +154,21 @@ export default function UsersManagement() {
 
       switch (modalAction) {
         case "delete":
-          endpoint = `http://localhost:5000/api/admin/users/${selectedUser._id}`;
+          endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/${selectedUser._id}`;
           method = "DELETE";
           break;
         case "activate":
-          endpoint = `http://localhost:5000/api/admin/users/${selectedUser._id}/activate`;
+          endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/${selectedUser._id}/activate`;
           break;
         case "deactivate":
-          endpoint = `http://localhost:5000/api/admin/users/${selectedUser._id}/deactivate`;
+          endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/${selectedUser._id}/deactivate`;
           break;
         case "makeAdmin":
-          endpoint = `http://localhost:5000/api/admin/users/${selectedUser._id}/role`;
+          endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/${selectedUser._id}/role`;
           method = "PUT";
           break;
         case "removeAdmin":
-          endpoint = `http://localhost:5000/api/admin/users/${selectedUser._id}/role`;
+          endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/${selectedUser._id}/role`;
           method = "PUT";
           break;
         default:

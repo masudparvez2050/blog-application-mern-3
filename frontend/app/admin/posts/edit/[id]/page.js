@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -57,28 +57,14 @@ export default function EditPost() {
   // Handle tag input
   const [tagInput, setTagInput] = useState("");
 
-  useEffect(() => {
-    // Redirect if not authenticated or not an admin
-    if (!loading && (!isAuthenticated || !isAdmin)) {
-      router.push(`/login?redirect=/admin/posts/edit/${postId}`);
-      return;
-    }
-
-    if (isAuthenticated && postId) {
-      // Fetch post data and categories
-      fetchPost();
-      fetchCategories();
-    }
-  }, [isAuthenticated, isAdmin, loading, router, postId]);
-
-  const fetchPost = async () => {
+  const fetchPost = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/posts/${postId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/posts/${postId}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -114,12 +100,12 @@ export default function EditPost() {
       setErrorMessage("Failed to fetch post. Please try again.");
       setIsLoading(false);
     }
-  };
+  }, [postId]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/categories", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -134,7 +120,29 @@ export default function EditPost() {
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Redirect if not authenticated or not an admin
+    if (!loading && (!isAuthenticated || !isAdmin)) {
+      router.push(`/login?redirect=/admin/posts/edit/${postId}`);
+      return;
+    }
+
+    if (isAuthenticated && postId) {
+      // Fetch post data and categories
+      fetchPost();
+      fetchCategories();
+    }
+  }, [
+    isAuthenticated,
+    isAdmin,
+    loading,
+    router,
+    postId,
+    fetchPost,
+    fetchCategories,
+  ]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -201,7 +209,7 @@ export default function EditPost() {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/categories", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -291,12 +299,12 @@ export default function EditPost() {
       };
 
       const response = await fetch(
-        `http://localhost:5000/api/posts/${postId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/posts/${postId}`,
         {
           method: "PUT",
           headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(postSubmitData),
         }
@@ -337,11 +345,11 @@ export default function EditPost() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/posts/${postId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/posts/${postId}`,
         {
           method: "DELETE",
           headers: {
-            Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
           },
         }
       );
