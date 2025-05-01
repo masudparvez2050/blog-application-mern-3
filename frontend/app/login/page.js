@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import FacebookLogin from "react-facebook-login/dist/facebook-login-render-props";
 import { motion } from "framer-motion";
 import { FaFacebook } from "react-icons/fa";
 
@@ -60,10 +61,21 @@ function LoginContent() {
     }
   };
 
-  const handleFacebookLogin = async () => {
-    // This would normally use the Facebook SDK
-    // For demo purposes, we'll just show an alert
-    alert("Facebook login feature coming soon!");
+  const handleFacebookLogin = async (response) => {
+    try {
+      setIsLoading(true);
+      // Check if the response has an accessToken
+      if (response.accessToken) {
+        await oauthLogin("facebook", response.accessToken);
+        router.push(redirectPath);
+      } else {
+        throw new Error("Facebook login failed. Please try again.");
+      }
+    } catch (err) {
+      setError(err.message || "Facebook login failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Animation variants
@@ -277,13 +289,22 @@ function LoginContent() {
                   />
                 </GoogleOAuthProvider>
               </div>
-              <button
-                onClick={handleFacebookLogin}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-              >
-                <FaFacebook className="h-5 w-5 text-blue-600 mr-2" />
-                <span>Facebook</span>
-              </button>
+              <FacebookLogin
+                appId={process.env.NEXT_PUBLIC_FACEBOOK_APP_ID}
+                autoLoad={false}
+                fields="name,email,picture"
+                callback={handleFacebookLogin}
+                render={(renderProps) => (
+                  <button
+                    onClick={renderProps.onClick}
+                    className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                    disabled={isLoading}
+                  >
+                    <FaFacebook className="h-5 w-5 text-blue-600 mr-2" />
+                    <span>Facebook</span>
+                  </button>
+                )}
+              />
             </div>
           </div>
 
