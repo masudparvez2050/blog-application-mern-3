@@ -12,18 +12,19 @@ export default function PostCard({ post }) {
         <Image
           src={post.coverImage}
           alt={post.title}
-          fill
           style={{ objectFit: "cover" }}
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
       </div>
       <div className="p-6">
         <div className="flex items-center space-x-2 mb-2">
-          {post.categories.slice(0, 2).map((category, index) => (
+          {post.categories?.slice(0, 2).map((category, index) => (
             <span
               key={index}
               className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full"
             >
-              {category}
+              {category.name}
             </span>
           ))}
         </div>

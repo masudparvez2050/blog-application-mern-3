@@ -15,7 +15,19 @@ import {
   FaUser,
   FaEye,
   FaFlag,
+  FaSpinner,
 } from "react-icons/fa";
+
+// Debounce utility function
+const debounce = (func, delay) => {
+  let timeoutId;
+  return (...args) => {
+    if (timeoutId) clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      func(...args);
+    }, delay);
+  };
+};
 
 export default function CommentManagement() {
   const { isAuthenticated, loading, isAdmin } = useAuth();
@@ -24,6 +36,8 @@ export default function CommentManagement() {
   const [comments, setComments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedComment, setSelectedComment] = useState(null);
@@ -34,22 +48,44 @@ export default function CommentManagement() {
 
   const commentsPerPage = 10;
 
+  // Setup debounced search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
+
+  // Trigger search when debounced search term changes
+  useEffect(() => {
+    if (debouncedSearchTerm !== "") {
+      setCurrentPage(1);
+      fetchComments();
+    }
+  }, [debouncedSearchTerm]);
+
   const fetchComments = useCallback(async () => {
     try {
       setIsLoading(true);
+      if (searchTerm) {
+        setIsSearching(true);
+      }
       const token = localStorage.getItem("token");
       const queryParams = new URLSearchParams({
         page: currentPage,
         limit: commentsPerPage,
-        search: searchTerm,
-        status: filterStatus,
+        search: debouncedSearchTerm,
+        status: filterStatus !== "all" ? filterStatus : "",
       });
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/comments?${queryParams}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/comments/admin?${queryParams}`,
         {
           headers: {
-        Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -69,8 +105,9 @@ export default function CommentManagement() {
       });
     } finally {
       setIsLoading(false);
+      setIsSearching(false);
     }
-  }, [currentPage, filterStatus, searchTerm, commentsPerPage]);
+  }, [currentPage, filterStatus, debouncedSearchTerm, commentsPerPage]);
 
   useEffect(() => {
     // Redirect if not authenticated or not an admin
@@ -87,14 +124,12 @@ export default function CommentManagement() {
     loading,
     router,
     currentPage,
-    searchTerm,
     filterStatus,
     fetchComments,
   ]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setCurrentPage(1);
     fetchComments();
   };
 
@@ -217,7 +252,7 @@ export default function CommentManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 mt-10">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
           <div className="flex items-center mb-4 md:mb-0">
@@ -230,21 +265,50 @@ export default function CommentManagement() {
           </div>
           <form onSubmit={handleSearch} className="flex">
             <div className="relative rounded-md shadow-sm flex-grow">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FaSearch className="h-4 w-4 text-gray-400" />
+              </div>
               <input
                 type="text"
                 placeholder="Search comments..."
-                className="focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-l-md"
+                className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-12 sm:text-sm border-gray-300 rounded-md p-2"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <button
-                type="submit"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <FaSearch className="mr-2 h-4 w-4" />
-                Search
-              </button>
+              {searchTerm && (
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  {isSearching ? (
+                    <FaSpinner className="animate-spin h-4 w-4 text-gray-400" />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setDebouncedSearchTerm("");
+                        fetchComments();
+                      }}
+                      className="text-gray-400 hover:text-gray-500 focus:outline-none"
+                    >
+                      <FaTimes className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
+            <button
+              type="submit"
+              className="ml-2 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              disabled={isSearching}
+            >
+              {isSearching ? (
+                <>
+                  <FaSpinner className="animate-spin mr-2 h-4 w-4" />
+                  Searching...
+                </>
+              ) : (
+                <>Search</>
+              )}
+            </button>
           </form>
         </div>
 

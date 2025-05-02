@@ -20,8 +20,6 @@ export default function BlogPost({ params }) {
   const [error, setError] = useState(null);
   const [similarPosts, setSimilarPosts] = useState([]);
 
-  console.log(post);
-
   useEffect(() => {
     const fetchPostAndComments = async () => {
       try {
@@ -46,11 +44,19 @@ export default function BlogPost({ params }) {
           setComments(commentsData);
         }
 
-        // Set similar posts - in a real app you would fetch this from an API
-        // Here we're just using mock data for demonstration
-        setSimilarPosts(
-          mockFeaturedPostsDetails.filter((p) => p._id !== id).slice(0, 2)
+        // Fetch similar posts based on categories and tags
+        const similarPostsResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/posts/${id}/similar?limit=2`
         );
+        if (similarPostsResponse.ok) {
+          const similarPostsData = await similarPostsResponse.json();
+          setSimilarPosts(similarPostsData);
+        } else {
+          // Fallback to mock data if API fails
+          setSimilarPosts(
+            mockFeaturedPostsDetails.filter((p) => p._id !== id).slice(0, 2)
+          );
+        }
 
         setError(null);
       } catch (err) {
@@ -79,17 +85,20 @@ export default function BlogPost({ params }) {
 
     try {
       setSubmitting(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/comments`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          content: commentText,
-          postId: id,
-        }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/comments`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            content: commentText,
+            postId: id,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to submit comment");
@@ -145,44 +154,53 @@ export default function BlogPost({ params }) {
 
         <article>
           {/* Post Header */}
-                  <div className="mb-8">
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {mockPost.categories.map((category, index) => (
-                    <span
-                    key={index}
-                    className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full"
-                    >
-                    {category}
-                    </span>
-                    ))}
-                  </div>
-                  <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                    {mockPost.title}
-                  </h1>
-                  <div className="flex items-center mb-6">
-                    <div className="relative h-12 w-12 rounded-full overflow-hidden mr-4">
-                    <Image
-                    src={mockPost.author.profilePicture || `https://avatar.iran.liara.run/username?username=${mockPost.author.name.replace(/\s+/g, '+')}`}
-                    alt={mockPost.author.name}
-                    fill
-                    style={{ objectFit: "cover" }}
-                    onError={(e) => {
-                      e.target.src = `https://avatar.iran.liara.run/username?username=${mockPost.author.name.replace(/\s+/g, '+')}`;
-                    }}
-                    />
-                    </div>
-                    <div>
-                    <p className="text-md font-medium text-gray-900">
-                    {mockPost.author.name}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                    {formatDate(mockPost.createdAt)} · {mockPost.views} views
-                    </p>
-                    </div>
-                  </div>
-                  </div>
+          <div className="mb-8">
+            <div className="flex flex-wrap gap-2 mb-4">
+              {mockPost.categories.map((category, index) => (
+                <span
+                  key={index}
+                  className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full"
+                >
+                  {category.name}
+                </span>
+              ))}
+            </div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              {mockPost.title}
+            </h1>
+            <div className="flex items-center mb-6">
+              <div className="relative h-12 w-12 rounded-full overflow-hidden mr-4">
+                <Image
+                  src={
+                    mockPost.author.profilePicture ||
+                    `https://avatar.iran.liara.run/username?username=${mockPost.author.name.replace(
+                      /\s+/g,
+                      "+"
+                    )}`
+                  }
+                  alt={mockPost.author.name}
+                  fill
+                  style={{ objectFit: "cover" }}
+                  onError={(e) => {
+                    e.target.src = `https://avatar.iran.liara.run/username?username=${mockPost.author.name.replace(
+                      /\s+/g,
+                      "+"
+                    )}`;
+                  }}
+                />
+              </div>
+              <div>
+                <p className="text-md font-medium text-gray-900">
+                  {mockPost.author.name}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {formatDate(mockPost.createdAt)} · {mockPost.views} views
+                </p>
+              </div>
+            </div>
+          </div>
 
-                  {/* Post Cover Image */}
+          {/* Post Cover Image */}
           <div className="relative h-96 w-full mb-8 rounded-xl overflow-hidden">
             <Image
               src={mockPost.coverImage}
@@ -201,8 +219,8 @@ export default function BlogPost({ params }) {
 
           <div className="mt-8 p-4 bg-blue-50 rounded-lg">
             <p className="text-blue-800">
-              This is demo content shown because the original post couldn&apos;t be
-              found.{" "}
+              This is demo content shown because the original post couldn&apos;t
+              be found.{" "}
               <Link href="/blogs" className="font-medium underline">
                 Browse all articles
               </Link>
@@ -240,7 +258,7 @@ export default function BlogPost({ params }) {
                   key={index}
                   className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full"
                 >
-                  {category}
+                  {category.name}
                 </span>
               ))}
             </div>
@@ -328,8 +346,8 @@ export default function BlogPost({ params }) {
 
           <div className="mt-8 p-4 bg-blue-50 rounded-lg">
             <p className="text-blue-800">
-              This is demo content shown because the original post couldn&apos;t be
-              found.{" "}
+              This is demo content shown because the original post couldn&apos;t
+              be found.{" "}
               <Link href="/blogs" className="font-medium underline">
                 Browse all articles
               </Link>
@@ -391,7 +409,7 @@ export default function BlogPost({ params }) {
               key={index}
               className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full"
             >
-              {category}
+              {category.name}
             </span>
           ))}
         </div>

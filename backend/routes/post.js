@@ -9,11 +9,16 @@ const {
   likePost,
   dislikePost,
   getUserPosts,
+  getPostsByUserId,
+  getPostsWithComments,
+  getSimilarPosts,
 } = require("../controllers/postController");
 const { auth, admin } = require("../middleware/auth");
 
 // Public routes
 router.get("/", getAllPosts);
+router.get("/with-comments", getPostsWithComments);
+router.get("/:id/similar", getSimilarPosts); // New route for similar posts
 router.get("/:id", getPostById);
 
 // User routes (requires authentication)
@@ -23,5 +28,6 @@ router.delete("/:id", auth, deletePost);
 router.put("/:id/like", auth, likePost);
 router.put("/:id/dislike", auth, dislikePost);
 router.get("/user/posts", auth, getUserPosts);
+router.get("/user/:userId", auth, getPostsByUserId);
 
 module.exports = router;

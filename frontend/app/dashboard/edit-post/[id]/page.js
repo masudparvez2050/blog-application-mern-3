@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "../../../context/AuthContext";
@@ -18,6 +18,7 @@ import {
   FaCheck,
   FaTimesCircle,
   FaInfoCircle,
+  FaTrash,
   FaLayerGroup,
   FaEye,
 } from "react-icons/fa";
@@ -27,19 +28,25 @@ import dynamic from "next/dynamic";
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 import "react-quill/dist/quill.snow.css";
 
-export default function CreatePost() {
-  const { isAuthenticated, loading, isAdmin, user } = useAuth();
+export default function EditPost() {
+  const { isAuthenticated, loading, user } = useAuth();
   const router = useRouter();
+  const params = useParams();
+  const postId = params.id;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [categories, setCategories] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [newCategory, setNewCategory] = useState("");
   const [showCategoryInput, setShowCategoryInput] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [contentTab, setContentTab] = useState("edit"); // 'edit' or 'preview'
   const [dragActive, setDragActive] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   // Form data state
   const [postData, setPostData] = useState({
@@ -49,25 +56,71 @@ export default function CreatePost() {
     coverImage: null,
     categories: [],
     tags: [],
-    status: "draft", // default status
+    status: "draft",
     isFeatured: false,
   });
 
   // Handle tag input
   const [tagInput, setTagInput] = useState("");
 
-  useEffect(() => {
-    // Redirect if not authenticated or not an admin
-    if (!loading && (!isAuthenticated || !isAdmin)) {
-      router.push("/login?redirect=/admin/posts/create");
-      return;
+  const fetchPost = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/posts/${postId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const post = await response.json();
+
+        // Check if the current user is the author of the post
+        if (user && post.author && post.author._id === user._id) {
+          setIsAuthorized(true);
+        } else {
+          setIsAuthorized(false);
+          setErrorMessage("You are not authorized to edit this post.");
+          setTimeout(() => {
+            router.push("/dashboard");
+          }, 2000);
+          return;
+        }
+
+        // Set the post data
+        setPostData({
+          title: post.title || "",
+          content: post.content || "",
+          excerpt: post.excerpt || "",
+          coverImage: post.coverImage || null,
+          categories: post.categories || [],
+          tags: post.tags || [],
+          status: post.status || "draft",
+          isFeatured: post.isFeatured || false,
+        });
+
+        // Set image preview if cover image exists
+        if (post.coverImage) {
+          setImagePreview(post.coverImage);
+        }
+
+        setIsLoading(false);
+      } else {
+        const errorData = await response.json();
+        setErrorMessage(errorData.message || "Failed to fetch post");
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error("Error fetching post:", error);
+      setErrorMessage("Failed to fetch post. Please try again.");
+      setIsLoading(false);
     }
+  }, [postId, router, user]);
 
-    // Fetch categories
-    fetchCategories();
-  }, [isAuthenticated, isAdmin, loading, router]);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
@@ -88,7 +141,21 @@ export default function CreatePost() {
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Redirect if not authenticated
+    if (!loading && !isAuthenticated) {
+      router.push(`/login?redirect=/dashboard/edit-post/${postId}`);
+      return;
+    }
+
+    if (isAuthenticated && postId) {
+      // Fetch post data and categories
+      fetchPost();
+      fetchCategories();
+    }
+  }, [isAuthenticated, loading, router, postId, fetchPost, fetchCategories]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -108,10 +175,12 @@ export default function CreatePost() {
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
+    if (
+      e.type === "dragenter" ||
+      e.type === "dragleave" ||
+      e.type === "dragover"
+    ) {
+      setDragActive(e.type === "dragenter" || e.type === "dragover");
     }
   };
 
@@ -133,7 +202,7 @@ export default function CreatePost() {
         setImagePreview(reader.result);
         setPostData({
           ...postData,
-          coverImage: reader.result,
+          coverImage: file,
         });
       };
       reader.readAsDataURL(file);
@@ -160,7 +229,11 @@ export default function CreatePost() {
 
     if (
       selectedCategory &&
-      !postData.categories.some((cat) => cat._id === selectedCategoryId)
+      !postData.categories.some((cat) => {
+        return cat._id
+          ? cat._id === selectedCategoryId
+          : cat === selectedCategoryId;
+      })
     ) {
       setPostData({
         ...postData,
@@ -172,7 +245,9 @@ export default function CreatePost() {
   const handleRemoveCategory = (categoryId) => {
     setPostData({
       ...postData,
-      categories: postData.categories.filter((cat) => cat._id !== categoryId),
+      categories: postData.categories.filter((cat) => {
+        return cat._id ? cat._id !== categoryId : cat !== categoryId;
+      }),
     });
   };
 
@@ -257,6 +332,11 @@ export default function CreatePost() {
 
     const status = publishStatus || postData.status;
 
+    // For users, prevent selecting "published" status - force to draft or pending
+    const finalStatus = ["draft", "pending"].includes(status)
+      ? status
+      : "pending";
+
     if (!validateForm()) {
       return;
     }
@@ -266,17 +346,40 @@ export default function CreatePost() {
     try {
       const token = localStorage.getItem("token");
 
-      // Prepare data for submission
+      // Prepare data for submission in JSON format
       const postSubmitData = {
-        ...postData,
-        status,
-        categories: postData.categories.map((cat) => cat._id),
+        title: postData.title,
+        content: postData.content,
+        excerpt: postData.excerpt,
+        categories: postData.categories.map((cat) =>
+          typeof cat === "object" && cat._id ? cat._id : cat
+        ),
+        tags: postData.tags,
+        status: finalStatus,
+        isFeatured: postData.isFeatured,
       };
 
+      // Handle the coverImage
+      if (postData.coverImage instanceof File) {
+        // Convert File to base64
+        const reader = new FileReader();
+        const base64Promise = new Promise((resolve) => {
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(postData.coverImage);
+        });
+
+        postSubmitData.coverImage = await base64Promise;
+      } else {
+        // If it's already a string (URL), pass it through
+        postSubmitData.coverImage = postData.coverImage;
+      }
+
+      console.log("Sending update data:", postSubmitData);
+
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/posts`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/posts/${postId}`,
         {
-          method: "POST",
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
@@ -286,22 +389,62 @@ export default function CreatePost() {
       );
 
       if (response.ok) {
-        const createdPost = await response.json();
-        setSuccessMessage(`Post created successfully as ${status}!`);
+        const updatedPost = await response.json();
+        setSuccessMessage(
+          `Post updated successfully as ${
+            finalStatus === "draft" ? "Draft" : "Pending Review"
+          }!`
+        );
 
-        // Redirect to post list after a short delay
+        // Redirect to dashboard after a short delay
         setTimeout(() => {
-          router.push("/admin/posts");
+          router.push("/dashboard");
         }, 2000);
       } else {
         const errorData = await response.json();
-        setErrorMessage(errorData.message || "Failed to create post");
+        setErrorMessage(errorData.message || "Failed to update post");
       }
     } catch (error) {
-      console.error("Error creating post:", error);
-      setErrorMessage("Failed to create post. Please try again.");
+      console.error("Error updating post:", error);
+      setErrorMessage("Failed to update post. Please try again.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    setErrorMessage("");
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/posts/${postId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        setSuccessMessage("Post deleted successfully!");
+
+        // Redirect to dashboard after a short delay
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 2000);
+      } else {
+        const errorData = await response.json();
+        setErrorMessage(errorData.message || "Failed to delete post");
+      }
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      setErrorMessage("Failed to delete post. Please try again.");
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmOpen(false);
     }
   };
 
@@ -354,7 +497,7 @@ export default function CreatePost() {
     ],
   };
 
-  if (loading) {
+  if (loading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -362,22 +505,97 @@ export default function CreatePost() {
     );
   }
 
+  if (!isAuthorized && !isLoading) {
+    return (
+      <div className="pt-24 min-h-screen flex items-center justify-center">
+        <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 max-w-2xl rounded-md shadow-md">
+          <p className="font-bold">Not Authorized</p>
+          <p className="mt-1">You can only edit your own posts.</p>
+          <Link
+            href="/dashboard"
+            className="mt-4 inline-block text-blue-600 hover:text-blue-800 hover:underline flex items-center"
+          >
+            <FaArrowLeft className="mr-1" /> Return to dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pt-10">
+      {/* Delete confirmation modal */}
+      {deleteConfirmOpen && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+          <div className="bg-white p-5 rounded-lg shadow-xl max-w-md mx-auto">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              Confirm Delete
+            </h3>
+            <p className="mb-6 text-gray-700">
+              Are you sure you want to delete this post? This action cannot be
+              undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setDeleteConfirmOpen(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center"
+              >
+                {isDeleting ? (
+                  <>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <FaTrash className="mr-2" /> Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Floating Action Bar */}
-      <div className=" bg-white  shadow-md border-b">
+      <div className=" bg-white shadow-md border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex justify-between items-center">
           <div className="flex items-center space-x-4">
             <Link
-              href="/admin/posts"
+              href="/dashboard"
               className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-              title="Back to posts"
+              title="Back to dashboard"
             >
               <FaArrowLeft className="h-5 w-5 text-gray-600" />
             </Link>
             <h1 className="text-xl font-bold text-gray-900 flex items-center">
               <FaNewspaper className="mr-2 h-5 w-5 text-blue-600" />
-              Create New Post
+              Edit Post
             </h1>
           </div>
           <div className="flex space-x-2">
@@ -395,12 +613,21 @@ export default function CreatePost() {
 
             <button
               type="button"
-              onClick={(e) => handleSubmit(e, "published")}
+              onClick={(e) => handleSubmit(e, "pending")}
               disabled={isSubmitting}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
             >
               <FaUpload className="mr-2 h-4 w-4" />
-              {isSubmitting ? "Publishing..." : "Publish"}
+              {isSubmitting ? "Submitting..." : "Submit for Review"}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setDeleteConfirmOpen(true)}
+              disabled={isDeleting || isSubmitting}
+              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            >
+              <FaTrash className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -729,32 +956,30 @@ export default function CreatePost() {
                       </div>
                     </label>
 
-                    <label
-                      className={`flex items-center p-3 border rounded-md cursor-pointer transition-colors ${
-                        postData.status === "published"
-                          ? "bg-green-50 border-green-300 text-green-800"
-                          : "border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="status"
-                        value="published"
-                        checked={postData.status === "published"}
-                        onChange={handleChange}
-                        className="sr-only"
-                      />
-                      <div className="flex items-center">
-                        <FaUpload
-                          className={`mr-2 h-4 w-4 ${
-                            postData.status === "published"
-                              ? "text-green-600"
-                              : "text-gray-400"
-                          }`}
+                    {/* If post was already published, show this as disabled option */}
+                    {postData.status === "published" && (
+                      <label className="flex items-center p-3 border rounded-md cursor-not-allowed bg-gray-50 border-gray-200 text-gray-500">
+                        <input
+                          type="radio"
+                          name="status"
+                          value="published"
+                          checked={true}
+                          onChange={() => {}}
+                          className="sr-only"
+                          disabled
                         />
-                        <span>Published</span>
-                      </div>
-                    </label>
+                        <div className="flex items-center">
+                          <FaCheck className="mr-2 h-4 w-4 text-gray-400" />
+                          <span>Published (Can't modify)</span>
+                        </div>
+                      </label>
+                    )}
+                  </div>
+
+                  <div className="mt-2 text-xs text-gray-500 flex items-center">
+                    <FaInfoCircle className="mr-1 h-3 w-3" />
+                    Your post will be reviewed by an administrator before being
+                    published.
                   </div>
                 </motion.div>
 
@@ -766,11 +991,11 @@ export default function CreatePost() {
                         htmlFor="isFeatured"
                         className="font-medium text-gray-700 cursor-pointer"
                       >
-                        Featured Post
+                        Featured Post Request
                       </label>
                       <div
                         className="ml-2 text-gray-400 hover:text-gray-500"
-                        title="Featured posts appear prominently on the homepage"
+                        title="Request to have your post featured on the homepage"
                       >
                         <FaInfoCircle className="h-4 w-4" />
                       </div>
@@ -791,6 +1016,9 @@ export default function CreatePost() {
                         }`}
                       ></label>
                     </div>
+                  </div>
+                  <div className="mt-1 text-xs text-gray-500">
+                    Featured status is subject to admin approval.
                   </div>
                 </motion.div>
 
@@ -827,16 +1055,16 @@ export default function CreatePost() {
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                           ></path>
                         </svg>
-                        {postData.status === "published"
-                          ? "Publishing..."
+                        {postData.status === "pending"
+                          ? "Submitting..."
                           : "Saving..."}
                       </>
                     ) : (
                       <>
-                        {postData.status === "published" ? (
+                        {postData.status === "pending" ? (
                           <>
                             <FaUpload className="mr-2 h-4 w-4" />
-                            Publish
+                            Submit for Review
                           </>
                         ) : (
                           <>
@@ -849,21 +1077,14 @@ export default function CreatePost() {
                   </button>
                   <button
                     type="button"
-                    onClick={(e) =>
-                      handleSubmit(
-                        e,
-                        postData.status === "published" ? "draft" : "published"
-                      )
-                    }
-                    disabled={isSubmitting}
-                    className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    onClick={() => setDeleteConfirmOpen(true)}
+                    className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
-                    {postData.status === "published"
-                      ? "Save as Draft"
-                      : "Publish Now"}
+                    <FaTrash className="mr-2 h-4 w-4" />
+                    Delete Post
                   </button>
                   <Link
-                    href="/admin/posts"
+                    href="/dashboard"
                     className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md text-sm text-center font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     <FaTimes className="mr-2 h-4 w-4" />
@@ -888,15 +1109,17 @@ export default function CreatePost() {
                 <motion.div variants={itemVariants}>
                   {/* Selected Categories */}
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {postData.categories.map((category) => (
+                    {postData.categories.map((category, index) => (
                       <div
-                        key={category._id}
+                        key={index}
                         className="bg-blue-100 text-blue-800 rounded-full px-3 py-1 text-sm flex items-center"
                       >
-                        {category.name}
+                        {category.name || category}
                         <button
                           type="button"
-                          onClick={() => handleRemoveCategory(category._id)}
+                          onClick={() =>
+                            handleRemoveCategory(category._id || category)
+                          }
                           className="ml-2 text-blue-600 hover:text-blue-800 focus:outline-none"
                         >
                           <FaTimes className="h-3 w-3" />
@@ -1027,6 +1250,41 @@ export default function CreatePost() {
               </div>
             </motion.div>
 
+            {/* Post History Card - Only show if post was ever published */}
+            {postData.status === "published" && (
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="bg-white shadow rounded-lg overflow-hidden"
+              >
+                <div className="p-6">
+                  <h2 className="text-lg font-medium text-gray-900 mb-4">
+                    Post Status
+                  </h2>
+
+                  <motion.div
+                    variants={itemVariants}
+                    className="text-sm text-gray-600"
+                  >
+                    <div className="flex items-center mb-2">
+                      <FaInfoCircle className="text-blue-500 mr-2" />
+                      <p>
+                        This post was previously published. Editing it will
+                        require re-approval.
+                      </p>
+                    </div>
+                    <div className="mt-2 p-3 bg-yellow-50 rounded-md border border-yellow-100">
+                      <p className="text-yellow-800">
+                        When you submit changes, the post will be unpublished
+                        and sent for review again.
+                      </p>
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+            )}
+
             {/* Tips Card */}
             <motion.div
               variants={containerVariants}
@@ -1038,7 +1296,7 @@ export default function CreatePost() {
                 <div className="flex items-center mb-3">
                   <FaInfoCircle className="h-5 w-5 text-blue-500" />
                   <h2 className="ml-2 text-lg font-medium text-blue-800">
-                    Writing Tips
+                    Editing Tips
                   </h2>
                 </div>
                 <motion.ul
@@ -1048,10 +1306,10 @@ export default function CreatePost() {
                   <li>Use a clear, attention-grabbing title</li>
                   <li>Break up content with subheadings</li>
                   <li>Include relevant images to enhance your content</li>
+                  <li>Preview your changes before saving</li>
                   <li>
-                    Use categories and tags to help readers find your post
+                    Remember that edited posts will need to be reviewed again
                   </li>
-                  <li>Preview your post before publishing</li>
                 </motion.ul>
               </div>
             </motion.div>

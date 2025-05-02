@@ -16,9 +16,9 @@ export default function Home() {
     try {
       setLoading(true);
 
-      // Fetch featured posts - using limit=3 and sort by views for featured posts
+      // Fetch featured posts - now using isFeatured=true filter to get only posts marked as featured
       const featuredResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/posts?limit=3&sort=views`
+        `${process.env.NEXT_PUBLIC_API_URL}/api/posts?limit=3&isFeatured=true`
       );
 
       // Fetch recent posts - using limit=3 and sort by date for recent posts

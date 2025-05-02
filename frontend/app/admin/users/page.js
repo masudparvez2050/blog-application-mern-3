@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -26,9 +26,10 @@ export default function UsersManagement() {
   const { isAuthenticated, loading, isAdmin } = useAuth();
   const router = useRouter();
 
-  const [users, setUsers] = useState([]); // This ensures users is always an array, never undefined
+  const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [sortField, setSortField] = useState("createdAt");
   const [sortDirection, setSortDirection] = useState("desc");
   const [currentPage, setCurrentPage] = useState(1);
@@ -40,15 +41,30 @@ export default function UsersManagement() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
+  // Set up debounce timeout ref
+  const debounceTimeout = useRef(null);
+
+  // Debounce function for search term
+  const debounce = useCallback((value) => {
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+
+    debounceTimeout.current = setTimeout(() => {
+      setDebouncedSearchTerm(value);
+      setCurrentPage(1); // Reset to first page when search term changes
+    }, 500); // 500ms delay
+  }, []);
+
   const fetchUsers = useCallback(async () => {
     try {
       setIsLoading(true);
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/users?page=${currentPage}&limit=10&sortField=${sortField}&sortDirection=${sortDirection}&search=${searchTerm}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/users?page=${currentPage}&limit=10&sortField=${sortField}&sortDirection=${sortDirection}&search=${debouncedSearchTerm}`,
         {
           headers: {
-        Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -66,7 +82,7 @@ export default function UsersManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, sortField, sortDirection, searchTerm]);
+  }, [currentPage, sortField, sortDirection, debouncedSearchTerm]);
 
   useEffect(() => {
     // Redirect if not authenticated or not an admin
@@ -85,13 +101,23 @@ export default function UsersManagement() {
     currentPage,
     sortField,
     sortDirection,
+    debouncedSearchTerm,
     fetchUsers,
   ]);
 
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+      }
+    };
+  }, []);
+
   const handleSearch = (e) => {
     e.preventDefault();
+    setDebouncedSearchTerm(searchTerm);
     setCurrentPage(1);
-    fetchUsers();
   };
 
   const handleSort = (field) => {
@@ -204,11 +230,10 @@ export default function UsersManagement() {
           } successfully.`
         );
 
-        // Update local state to reflect the changes
         if (modalAction === "delete") {
           setUsers(users.filter((user) => user._id !== selectedUser._id));
         } else {
-          fetchUsers(); // Refetch to get updated user status
+          fetchUsers();
         }
       } else {
         throw new Error("Failed to perform action");
@@ -223,7 +248,6 @@ export default function UsersManagement() {
     }
   };
 
-  // Clear messages after 5 seconds
   useEffect(() => {
     if (errorMessage || successMessage) {
       const timer = setTimeout(() => {
@@ -234,7 +258,6 @@ export default function UsersManagement() {
     }
   }, [errorMessage, successMessage]);
 
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -266,8 +289,7 @@ export default function UsersManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+    <div className="min-h-screen bg-gray-50 mt-10">
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center">
@@ -290,7 +312,6 @@ export default function UsersManagement() {
       </header>
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {/* Messages */}
         {errorMessage && (
           <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded">
             <div className="flex">
@@ -317,7 +338,6 @@ export default function UsersManagement() {
           </div>
         )}
 
-        {/* Search and Filters */}
         <div className="bg-white shadow rounded-lg mb-6">
           <div className="p-6">
             <form
@@ -331,10 +351,14 @@ export default function UsersManagement() {
                   </div>
                   <input
                     type="text"
-                    className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-12 sm:text-sm border-gray-300 rounded-md"
+                    className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-12 sm:text-sm border-gray-300 rounded-md p-4"
                     placeholder="Search users by name, email, or role..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      setSearchTerm(newValue);
+                      debounce(newValue);
+                    }}
                   />
                 </div>
               </div>
@@ -348,7 +372,6 @@ export default function UsersManagement() {
           </div>
         </div>
 
-        {/* Users Table */}
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -583,7 +606,6 @@ export default function UsersManagement() {
             </table>
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
@@ -648,7 +670,6 @@ export default function UsersManagement() {
         </motion.div>
       </main>
 
-      {/* Confirmation Modal */}
       {showConfirmModal && (
         <div className="fixed z-10 inset-0 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">

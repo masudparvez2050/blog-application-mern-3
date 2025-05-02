@@ -1,9 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { mockPosts } from "../data/mockPosts";
+
+// Custom debounce hook
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 export default function BlogsList() {
   const [posts, setPosts] = useState([]);
@@ -13,35 +30,29 @@ export default function BlogsList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [error, setError] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
 
-  // Categories for filtering
-  const categories = [
-    "All",
-    "Web Development",
-    "JavaScript",
-    "React",
-    "Node.js",
-    "CSS",
-    "Database",
-    "AI",
-    "Technology",
-  ];
+  // Apply the debounce hook to searchTerm with 500ms delay
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
+  // Rest of the code remains the same, but change the useEffect dependency from searchTerm to debouncedSearchTerm
   useEffect(() => {
     const fetchPosts = async () => {
+      // existing fetchPosts code
       setLoading(true);
       try {
         // Build query parameters for filtering
         let queryParams = new URLSearchParams();
 
         // Add category filter if selected
-        if (selectedCategory && selectedCategory !== "All") {
+        if (selectedCategory && selectedCategory !== "all") {
           queryParams.append("category", selectedCategory);
         }
 
         // Add search term if provided
-        if (searchTerm) {
-          queryParams.append("search", searchTerm);
+        if (debouncedSearchTerm && debouncedSearchTerm.trim() !== "") {
+          queryParams.append("search", debouncedSearchTerm);
         }
 
         // Add pagination
@@ -50,7 +61,9 @@ export default function BlogsList() {
 
         // Fetch posts from API
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/posts?${queryParams.toString()}`
+          `${
+            process.env.NEXT_PUBLIC_API_URL
+          }/api/posts?${queryParams.toString()}`
         );
 
         if (!response.ok) {
@@ -71,43 +84,91 @@ export default function BlogsList() {
         let filteredPosts = mockPosts;
 
         // Apply the same filters to mock data
-        if (selectedCategory && selectedCategory !== "All") {
+        if (selectedCategory && selectedCategory !== "all") {
           filteredPosts = mockPosts.filter((post) =>
-            post.categories.includes(selectedCategory)
+            post.categories.some((cat) =>
+              typeof cat === "object"
+                ? cat._id === selectedCategory || cat.slug === selectedCategory
+                : cat === selectedCategory
+            )
           );
         }
 
-        if (searchTerm) {
+        if (searchTerm && searchTerm.trim() !== "") {
+          const searchLower = searchTerm.toLowerCase();
           filteredPosts = filteredPosts.filter(
             (post) =>
-              post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              post.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
+              post.title.toLowerCase().includes(searchLower) ||
+              post.excerpt.toLowerCase().includes(searchLower)
           );
         }
 
         // Update state with filtered mock data
         setPosts(filteredPosts);
         setTotalPages(Math.ceil(filteredPosts.length / 6));
+        // ...
       } finally {
         setLoading(false);
       }
     };
 
     fetchPosts();
-  }, [searchTerm, selectedCategory, currentPage]);
+  }, [debouncedSearchTerm, selectedCategory, currentPage]);
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    // No need to immediately trigger search
+  };
+
+  useEffect(() => {
+    // Fetch categories from API
+    const fetchCategories = async () => {
+      setLoadingCategories(true);
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/categories`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch categories");
+        }
+
+        const data = await response.json();
+        setCategories(data);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        // Fallback categories in case API fails
+        setCategories([
+          { _id: "all", name: "All" },
+          { _id: "web", name: "Web Development" },
+          { _id: "js", name: "JavaScript" },
+          { _id: "react", name: "React" },
+          { _id: "node", name: "Node.js" },
+          { _id: "css", name: "CSS" },
+          { _id: "db", name: "Database" },
+          { _id: "ai", name: "AI" },
+          { _id: "tech", name: "Technology" },
+        ]);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const formatDate = (dateString) => {
     const options = { year: "numeric", month: "long", day: "numeric" };
     return new Date(dateString).toLocaleDateString("en-US", options);
   };
 
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1); // Reset to first page when search changes
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setCurrentPage(1); // Reset to first page when search is submitted
   };
 
   const handleCategoryChange = (category) => {
-    setSelectedCategory(category === "All" ? "" : category);
+    setSelectedCategory(category === "all" ? "" : category);
     setCurrentPage(1); // Reset to first page when category changes
   };
 
@@ -125,7 +186,10 @@ export default function BlogsList() {
 
           {/* Search and filter */}
           <div className="max-w-4xl mx-auto mb-8">
-            <div className="flex flex-col md:flex-row gap-4">
+            <form
+              onSubmit={handleSearchSubmit}
+              className="flex flex-col md:flex-row gap-4"
+            >
               <div className="flex-grow">
                 <div className="relative">
                   <input
@@ -154,21 +218,22 @@ export default function BlogsList() {
                 </div>
               </div>
 
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 flex gap-2">
                 <select
                   className="w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-500"
                   value={selectedCategory}
                   onChange={(e) => handleCategoryChange(e.target.value)}
+                  disabled={loadingCategories}
                 >
                   <option value="">All Categories</option>
                   {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
+                    <option key={category._id} value={category._id}>
+                      {category.name}
                     </option>
                   ))}
                 </select>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       </div>
@@ -231,7 +296,7 @@ export default function BlogsList() {
                           key={index}
                           className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full"
                         >
-                          {category}
+                          {category.name}
                         </span>
                       ))}
                     </div>
@@ -340,8 +405,8 @@ export default function BlogsList() {
               No posts found
             </h3>
             <p className="text-gray-600">
-              Try adjusting your search or filter to find what you&apos;re looking
-              for.
+              Try adjusting your search or filter to find what you&apos;re
+              looking for.
             </p>
           </div>
         )}

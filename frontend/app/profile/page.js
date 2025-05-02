@@ -30,6 +30,7 @@ export default function Profile() {
     confirmNewPassword: "",
   });
   const [imagePreview, setImagePreview] = useState(null);
+  const [imageFile, setImageFile] = useState(null); // Store the actual file object
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -58,13 +59,12 @@ export default function Profile() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setImageFile(file); // Store the actual file object for later upload
+
+      // Create a preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
-        setProfileData((prev) => ({
-          ...prev,
-          profilePicture: reader.result,
-        }));
       };
       reader.readAsDataURL(file);
     }
@@ -112,6 +112,39 @@ export default function Profile() {
     try {
       setIsSubmitting(true);
 
+      // Handle image upload separately if a new image was selected
+      let profilePictureUrl = profileData.profilePicture;
+
+      if (imageFile) {
+        // Create a FormData object to upload the image
+        const formData = new FormData();
+        formData.append("image", imageFile);
+
+        // Upload the image to backend or a cloud service
+        const token = localStorage.getItem("token");
+        const uploadResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/users/upload-profile-picture`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+          }
+        );
+
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json();
+          throw new Error(
+            errorData.message || "Failed to upload profile picture"
+          );
+        }
+
+        // Get the URL of the uploaded image
+        const uploadResult = await uploadResponse.json();
+        profilePictureUrl = uploadResult.url;
+      }
+
       // Create data object with only the fields that should be updated
       const updateData = {
         name: profileData.name,
@@ -124,8 +157,8 @@ export default function Profile() {
       }
 
       // Only include profile picture if it has changed
-      if (profileData.profilePicture !== user.profilePicture) {
-        updateData.profilePicture = profileData.profilePicture;
+      if (profilePictureUrl && profilePictureUrl !== user.profilePicture) {
+        updateData.profilePicture = profilePictureUrl;
       }
 
       // Only include password fields if a new password was entered
@@ -134,12 +167,26 @@ export default function Profile() {
         updateData.password = profileData.newPassword;
       }
 
-      await updateProfile(updateData);
+      // Call the updateProfile function from AuthContext
+      const updatedUser = await updateProfile(updateData);
+
       setMessage({
         text: "Profile updated successfully!",
         type: "success",
       });
+
       setIsEditing(false);
+
+      // Clear password fields after successful update
+      setProfileData((prev) => ({
+        ...prev,
+        currentPassword: "",
+        newPassword: "",
+        confirmNewPassword: "",
+      }));
+
+      // Clear the image file state
+      setImageFile(null);
     } catch (error) {
       setMessage({
         text: error.message || "Failed to update profile",
@@ -243,8 +290,10 @@ export default function Profile() {
                   <Image
                     src={imagePreview || profileData.profilePicture}
                     alt={profileData.name}
-                    fill
                     style={{ objectFit: "cover" }}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    priority={true}
                   />
                 ) : (
                   <div className="h-full w-full flex items-center justify-center bg-gray-200">

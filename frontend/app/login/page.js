@@ -14,8 +14,23 @@ import { FaFacebook } from "react-icons/fa";
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams.get("redirect") || "/dashboard";
-  const { login, oauthLogin, loading } = useAuth();
+  const [redirectPath, setRedirectPath] = useState(
+    searchParams.get("redirect") || ""
+  );
+  const { login, oauthLogin, loading, user } = useAuth();
+
+  console.log(searchParams);
+
+  useEffect(() => {
+    // Set redirect path based on user role when user data changes
+    if (user) {
+      if (user.role === "admin") {
+        setRedirectPath((prev) => prev || "/admin");
+      } else {
+        setRedirectPath((prev) => prev || "/dashboard");
+      }
+    }
+  }, [user]);
 
   const [formData, setFormData] = useState({
     email: "",

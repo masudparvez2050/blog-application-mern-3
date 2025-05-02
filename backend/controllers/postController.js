@@ -8,8 +8,34 @@ const { uploadImage, deleteImage } = require("../utils/cloudinary");
 // @access  Public
 exports.getAllPosts = async (req, res) => {
   try {
-    const { page = 1, limit = 10, category, tag, search } = req.query;
-    const query = { status: "published", isActive: true };
+    const {
+      page = 1,
+      limit = 10,
+      category,
+      tag,
+      search,
+      sort = "createdAt",
+      sortField,
+      sortDirection,
+      status,
+      isFeatured,
+    } = req.query;
+
+    // Check if this is an admin request (has auth token) or public request
+    const isAdminRequest = req.user && req.user.role === "admin";
+
+    // Set up the initial query
+    let query = {};
+
+    // If this is a public request, only show published and active posts
+    if (!isAdminRequest) {
+      query.status = "published";
+      query.isActive = true;
+    }
+    // If this is an admin request and a status filter is provided
+    else if (isAdminRequest && status && status !== "all") {
+      query.status = status;
+    }
 
     if (category) {
       query.categories = category;
@@ -20,20 +46,68 @@ exports.getAllPosts = async (req, res) => {
     }
 
     if (search) {
-      query.$text = { $search: search };
+      // Enhanced search with regex for better multi-word searching
+      const searchRegex = new RegExp(search.split(" ").join("|"), "i");
+      query.$or = [
+        { title: searchRegex },
+        { content: searchRegex },
+        { excerpt: searchRegex },
+        { tags: { $in: [searchRegex] } },
+      ];
+
+      // If MongoDB text index search is preferred, keep this as an alternative
+      // query.$text = { $search: search };
+    }
+
+    // Add filter for featured posts if isFeatured parameter is provided
+    if (isFeatured === "true") {
+      query.isFeatured = true;
+    }
+
+    // Determine sort order
+    const sortOption = {};
+    // For admin requests, use the sortField and sortDirection if provided
+    if (isAdminRequest && sortField) {
+      sortOption[sortField] = sortDirection === "asc" ? 1 : -1;
+    }
+    // For public requests or as fallback
+    else if (sort === "views") {
+      sortOption.views = -1;
+    } else if (sort === "createdAt") {
+      sortOption.createdAt = -1;
+    } else {
+      sortOption[sort] = -1;
     }
 
     const posts = await Post.find(query)
       .populate("author", "name profilePicture")
-      .sort({ createdAt: -1 })
+      .populate("categories", "name slug") // Populate categories with name and slug
+      .sort(sortOption)
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .exec();
 
     const count = await Post.countDocuments(query);
 
+    // Get comment counts for each post
+    const postsWithCommentCounts = await Promise.all(
+      posts.map(async (post) => {
+        const commentCount = await Comment.countDocuments({
+          post: post._id,
+          isActive: true,
+          isApproved: { $ne: false },
+        });
+
+        // Convert to plain object and add comment count
+        const postObj = post.toObject();
+        postObj.commentCount = commentCount;
+
+        return postObj;
+      })
+    );
+
     res.json({
-      posts,
+      posts: postsWithCommentCounts,
       totalPages: Math.ceil(count / limit),
       currentPage: page,
     });
@@ -50,17 +124,34 @@ exports.getPostById = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id)
       .populate("author", "name profilePicture bio")
+      .populate("categories", "name slug") // Populate categories with name and slug
       .exec();
 
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
     }
 
+    // Fetch comments for this post
+    const comments = await Comment.find({
+      post: req.params.id,
+      isActive: true,
+      isApproved: { $ne: false }, // Get approved and pending comments
+    })
+      .populate("author", "name profilePicture")
+      .sort({ createdAt: -1 })
+      .exec();
+
     // Increment view count
     post.views += 1;
     await post.save();
 
-    res.json(post);
+    // Create a response object with post and its comments
+    const postWithComments = {
+      ...post._doc,
+      comments,
+    };
+
+    res.json(postWithComments);
   } catch (error) {
     console.error("Get post by ID error:", error);
     if (error.kind === "ObjectId") {
@@ -304,6 +395,218 @@ exports.getUserPosts = async (req, res) => {
     res.json(posts);
   } catch (error) {
     console.error("Get user posts error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Get posts by userId
+// @route   GET /api/posts/user/:userId
+// @access  Private
+exports.getPostsByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Validate that the current user can access these posts
+    // Users can see their own posts, or admins can see any user's posts
+    if (req.user._id.toString() !== userId && req.user.role !== "admin") {
+      return res.status(403).json({
+        message: "Not authorized to view these posts",
+      });
+    }
+
+    // Get the posts by userId
+    const posts = await Post.find({ author: userId })
+      .populate("author", "name profilePicture")
+      .populate("categories", "name slug")
+      .sort({ createdAt: -1 })
+      .exec();
+
+    // For each post, get the comment count
+    const postsWithCommentCounts = await Promise.all(
+      posts.map(async (post) => {
+        const commentCount = await Comment.countDocuments({
+          post: post._id,
+          isActive: true,
+          isApproved: { $ne: false },
+        });
+
+        // Convert to plain object and add comment count
+        const postObj = post.toObject();
+        postObj.comments = commentCount;
+
+        return postObj;
+      })
+    );
+
+    res.json(postsWithCommentCounts);
+  } catch (error) {
+    console.error("Get posts by userId error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Get posts with their comments
+// @route   GET /api/posts/with-comments
+// @access  Public
+exports.getPostsWithComments = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      category,
+      tag,
+      search,
+      sort = "createdAt",
+      commentLimit = 3,
+    } = req.query;
+
+    // Set up the initial query for published and active posts
+    let query = {
+      status: "published",
+      isActive: true,
+    };
+
+    if (category) {
+      query.categories = category;
+    }
+
+    if (tag) {
+      query.tags = tag;
+    }
+
+    if (search) {
+      const searchRegex = new RegExp(search.split(" ").join("|"), "i");
+      query.$or = [
+        { title: searchRegex },
+        { content: searchRegex },
+        { excerpt: searchRegex },
+        { tags: { $in: [searchRegex] } },
+      ];
+    }
+
+    // Determine sort order
+    const sortOption = {};
+    if (sort === "views") {
+      sortOption.views = -1;
+    } else if (sort === "createdAt") {
+      sortOption.createdAt = -1;
+    } else {
+      sortOption[sort] = -1;
+    }
+
+    // First get the posts
+    const posts = await Post.find(query)
+      .populate("author", "name profilePicture")
+      .populate("categories", "name slug")
+      .sort(sortOption)
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .exec();
+
+    const count = await Post.countDocuments(query);
+
+    // Get comments for all posts in parallel
+    const postsWithComments = await Promise.all(
+      posts.map(async (post) => {
+        // Get recent comments for the post, limited to commentLimit
+        const comments = await Comment.find({
+          post: post._id,
+          isActive: true,
+          isApproved: { $ne: false },
+        })
+          .populate("author", "name profilePicture")
+          .sort({ createdAt: -1 })
+          .limit(parseInt(commentLimit))
+          .exec();
+
+        // Get total comment count
+        const commentCount = await Comment.countDocuments({
+          post: post._id,
+          isActive: true,
+          isApproved: { $ne: false },
+        });
+
+        // Convert to plain object and add comments
+        const postObj = post.toObject();
+        postObj.comments = comments;
+        postObj.commentCount = commentCount;
+
+        return postObj;
+      })
+    );
+
+    res.json({
+      posts: postsWithComments,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page,
+    });
+  } catch (error) {
+    console.error("Get posts with comments error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Get similar posts based on categories and tags
+// @route   GET /api/posts/:id/similar
+// @access  Public
+exports.getSimilarPosts = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { limit = 4 } = req.query;
+
+    // Find the post by ID
+    const post = await Post.findById(id).populate("categories");
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Get the categories and tags from the post
+    const categoryIds = post.categories.map((category) => category._id);
+    const tags = post.tags || [];
+
+    // Build the query to find similar posts
+    const query = {
+      _id: { $ne: post._id }, // Exclude the current post
+      status: "published", // Only published posts
+      isActive: true, // Only active posts
+      $or: [
+        { categories: { $in: categoryIds } }, // Posts with matching categories
+        { tags: { $in: tags } }, // Posts with matching tags
+      ],
+    };
+
+    // Find similar posts
+    const similarPosts = await Post.find(query)
+      .populate("author", "name profilePicture")
+      .populate("categories", "name slug")
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .exec();
+
+    // Get comment counts for each post
+    const postsWithCommentCounts = await Promise.all(
+      similarPosts.map(async (similarPost) => {
+        const commentCount = await Comment.countDocuments({
+          post: similarPost._id,
+          isActive: true,
+          isApproved: { $ne: false },
+        });
+
+        // Convert to plain object and add comment count
+        const postObj = similarPost.toObject();
+        postObj.commentCount = commentCount;
+
+        return postObj;
+      })
+    );
+
+    res.json(postsWithCommentCounts);
+  } catch (error) {
+    console.error("Error fetching similar posts:", error);
+    if (error.kind === "ObjectId") {
+      return res.status(404).json({ message: "Post not found" });
+    }
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

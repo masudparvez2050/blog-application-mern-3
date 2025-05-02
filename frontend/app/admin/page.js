@@ -30,9 +30,13 @@ export default function AdminDashboard() {
     totalComments: 0,
     pendingPosts: 0,
     pendingComments: 0,
+    totalViews: 0,
+    totalLikes: 0,
     recentActivity: [],
   });
   const [isLoading, setIsLoading] = useState(true);
+
+  
 
   useEffect(() => {
     // Redirect if not authenticated or not an admin
@@ -53,7 +57,7 @@ export default function AdminDashboard() {
         `${process.env.NEXT_PUBLIC_API_URL}/api/admin/dashboard`,
         {
           headers: {
-        Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -110,7 +114,11 @@ export default function AdminDashboard() {
   // Format date for activity items
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleString();
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
   // Get icon for activity type
@@ -264,7 +272,11 @@ export default function AdminDashboard() {
 
           {/* Stats Card */}
           <motion.div variants={itemVariants}>
-            <div className="bg-white rounded-lg shadow p-4">
+            <Link
+              href="/admin/analytics"
+              className="text-sm text-orange-600 font-medium"
+            >
+            <div className="bg-white rounded-lg shadow p-4 hover:bg-blue-50 transition-colors duration-300">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-orange-100 text-orange-600">
                   <FaChartBar className="h-8 w-8" />
@@ -278,11 +290,11 @@ export default function AdminDashboard() {
                       <div className="flex mt-1">
                         <div className="flex items-center text-sm text-gray-500 mr-4">
                           <FaEye className="mr-1 h-4 w-4 text-gray-400" />
-                          <span>4.2K views</span>
+                          <span>{stats.totalViews} views</span>
                         </div>
                         <div className="flex items-center text-sm text-gray-500">
                           <FaThumbsUp className="mr-1 h-4 w-4 text-gray-400" />
-                          <span>1.8K likes</span>
+                          <span>{stats.totalLikes} likes</span>
                         </div>
                       </div>
                     </dd>
@@ -291,12 +303,12 @@ export default function AdminDashboard() {
               </div>
               <div className="mt-4">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-orange-600 font-medium">
+                 
                     View Analytics
-                  </div>
+                 
                 </div>
               </div>
-            </div>
+            </div> </Link>
           </motion.div>
         </motion.div>
 
@@ -384,7 +396,7 @@ export default function AdminDashboard() {
             {stats.recentActivity && stats.recentActivity.length > 0 ? (
               stats.recentActivity.map((activity, index) => (
                 <motion.div
-                  key={index}
+                  key={activity.id}
                   variants={itemVariants}
                   className="px-6 py-4 flex items-start"
                 >
@@ -393,23 +405,32 @@ export default function AdminDashboard() {
                   </div>
                   <div className="ml-4 flex-1">
                     <div className="text-sm font-medium text-gray-900">
-                      {activity.description}
+                      {activity.type === "post"
+                        ? `${activity.user} published a post titled '${activity.title}'`
+                        : `${activity.user} commented on '${activity.post}': "${activity.content}"`}
                     </div>
                     <div className="mt-1 text-sm text-gray-500 flex items-center">
                       <FaCalendarAlt className="mr-1 h-3 w-3" />
-                      {formatDate(activity.timestamp)}
+                      {formatDate(activity.date)}
+                      {activity.type === "post" && (
+                        <span className="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          {activity.status}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  {activity.link && (
-                    <div className="ml-4">
-                      <Link
-                        href={activity.link}
-                        className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      >
-                        View
-                      </Link>
-                    </div>
-                  )}
+                  <div className="ml-4">
+                    <Link
+                      href={
+                        activity.type === "post"
+                          ? `/blogs/${activity.id}`
+                          : `/admin/comments`
+                      }
+                      className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      View
+                    </Link>
+                  </div>
                 </motion.div>
               ))
             ) : (

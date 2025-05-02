@@ -54,7 +54,7 @@ export default function PostsManagement() {
         `${process.env.NEXT_PUBLIC_API_URL}/api/admin/posts?page=${currentPage}&limit=10&sortField=${sortField}&sortDirection=${sortDirection}&status=${filterStatus}&search=${searchTerm}`,
         {
           headers: {
-        Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -308,7 +308,7 @@ export default function PostsManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 mt-10">
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
@@ -373,7 +373,7 @@ export default function PostsManagement() {
                   </div>
                   <input
                     type="text"
-                    className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-12 sm:text-sm border-gray-300 rounded-md"
+                    className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-12 sm:text-sm border-gray-300 rounded-md p-4"
                     placeholder="Search posts by title, content, or author..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -391,7 +391,7 @@ export default function PostsManagement() {
                   <select
                     value={filterStatus}
                     onChange={(e) => handleFilterChange(e.target.value)}
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border"
                   >
                     <option value="all">All Posts</option>
                     <option value="published">Published</option>
@@ -528,7 +528,7 @@ export default function PostsManagement() {
                             {post.title}
                           </div>
                           <div className="text-sm text-gray-500 mt-1 max-w-md">
-                            {truncateText(post.excerpt || post.content, 80)}
+                            {truncateText(post.excerpt || post.content, 20)}
                           </div>
                           <div className="text-xs text-gray-400 mt-1 flex items-center">
                             <span className="mr-2">
@@ -604,7 +604,7 @@ export default function PostsManagement() {
                         </div>
                         <div className="flex items-center">
                           <FaComment className="mr-1 h-3 w-3 text-gray-400" />
-                          <span>{post.comments?.length || 0}</span>
+                          <span>{post?.commentCount || 0}</span>
                         </div>
                       </div>
                     </td>

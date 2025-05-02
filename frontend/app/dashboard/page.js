@@ -11,7 +11,8 @@ export default function Dashboard() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [userPosts, setUserPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("published");
+  const [activeTab, setActiveTab] = useState("all");
+
 
   useEffect(() => {
     // Check if user is authenticated
@@ -20,55 +21,24 @@ export default function Dashboard() {
       return;
     }
 
-    // In a real application, we'd fetch the user's posts from the API
-    // For now, we'll use mock data
     const fetchUserPosts = async () => {
       setLoading(true);
       try {
-        // Mock data
-        const mockPosts = [
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/posts/user/${user._id}`,
           {
-            _id: "1",
-            title: "Getting Started with Next.js",
-            excerpt:
-              "Learn the basics of Next.js and how to build modern web applications with React.",
-            coverImage:
-              "https://images.unsplash.com/photo-1593720213428-28a5b9e94613?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-            status: "published",
-            createdAt: "2025-04-20T12:00:00.000Z",
-            views: 1250,
-            likes: 45,
-            comments: 12,
-          },
-          {
-            _id: "2",
-            title: "The Future of AI in Content Creation",
-            excerpt:
-              "Explore how artificial intelligence is transforming the way we create and consume content online.",
-            coverImage:
-              "https://images.unsplash.com/photo-1655720031554-a929595ffad7?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-            status: "published",
-            createdAt: "2025-04-18T12:00:00.000Z",
-            views: 980,
-            likes: 32,
-            comments: 8,
-          },
-          {
-            _id: "3",
-            title: "MongoDB Performance Optimization Tips",
-            excerpt:
-              "Learn advanced techniques to optimize MongoDB performance in high-traffic applications.",
-            coverImage:
-              "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-            status: "draft",
-            createdAt: "2025-04-15T12:00:00.000Z",
-            views: 0,
-            likes: 0,
-            comments: 0,
-          },
-        ];
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
 
-        setUserPosts(mockPosts);
+        if (!response.ok) {
+          throw new Error("Failed to fetch posts");
+        }
+
+        const data = await response.json();
+        setUserPosts(data);
       } catch (error) {
         console.error("Error fetching user posts:", error);
       } finally {
@@ -76,10 +46,10 @@ export default function Dashboard() {
       }
     };
 
-    if (isAuthenticated) {
+    if (isAuthenticated && user?._id) {
       fetchUserPosts();
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isAuthenticated, authLoading, router, user]);
 
   const formatDate = (dateString) => {
     const options = { year: "numeric", month: "long", day: "numeric" };
@@ -92,10 +62,30 @@ export default function Dashboard() {
   });
 
   const handleDeletePost = async (postId) => {
-    // In a real application, we would call the API to delete the post
-    // For now, we'll just update the state
     if (confirm("Are you sure you want to delete this post?")) {
-      setUserPosts(userPosts.filter((post) => post._id !== postId));
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/posts/${postId}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to delete post");
+        }
+
+        // Update state after successful deletion
+        setUserPosts(userPosts.filter((post) => post._id !== postId));
+        alert("Post deleted successfully!");
+      } catch (error) {
+        console.error("Error deleting post:", error);
+        alert("Failed to delete post. Please try again.");
+      }
     }
   };
 
@@ -119,7 +109,9 @@ export default function Dashboard() {
         </div>
 
         {/* Dashboard Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          {/* Total Posts */}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -149,6 +141,7 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Published */}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -181,6 +174,37 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Pending */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 uppercase font-medium">
+                  Pending
+                </p>
+                <h2 className="text-3xl font-bold text-gray-900">
+                  {userPosts.filter((post) => post.status === "pending").length}
+                </h2>
+              </div>
+              <div className="p-3 rounded-full bg-indigo-100 text-indigo-600">
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Drafts */}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -236,6 +260,16 @@ export default function Dashboard() {
             </button>
             <button
               className={`px-4 py-2 rounded-lg ${
+                activeTab === "pending"
+                  ? "bg-gray-800 text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
+              onClick={() => setActiveTab("pending")}
+            >
+              Pending
+            </button>
+            <button
+              className={`px-4 py-2 rounded-lg ${
                 activeTab === "draft"
                   ? "bg-gray-800 text-white"
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -247,7 +281,7 @@ export default function Dashboard() {
           </div>
 
           <Link
-            href="/create-post"
+            href="/dashboard/create-post"
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
           >
             <svg
@@ -279,7 +313,7 @@ export default function Dashboard() {
             </div>
           </div>
         ) : filteredPosts.length > 0 ? (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-white rounded-lg shadow-md overflow-x-scroll">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -343,10 +377,16 @@ export default function Dashboard() {
                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           post.status === "published"
                             ? "bg-green-100 text-green-800"
+                            : post.status === "pending"
+                            ? "bg-blue-100 text-blue-800"
                             : "bg-yellow-100 text-yellow-800"
                         }`}
                       >
-                        {post.status === "published" ? "Published" : "Draft"}
+                        {post.status === "published"
+                          ? "Published"
+                          : post.status === "pending"
+                          ? "Pending"
+                          : "Draft"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -422,7 +462,7 @@ export default function Dashboard() {
                           View
                         </Link>
                         <Link
-                          href={`/edit-post/${post._id}`}
+                          href={`/dashboard/edit-post/${post._id}`}
                           className="text-indigo-600 hover:text-indigo-900"
                         >
                           Edit
@@ -464,10 +504,12 @@ export default function Dashboard() {
                 ? "You haven't created any posts yet."
                 : activeTab === "published"
                 ? "You don't have any published posts."
+                : activeTab === "pending"
+                ? "You don't have any pending posts."
                 : "You don't have any draft posts."}
             </p>
             <Link
-              href="/create-post"
+              href="/dashboard/create-post"
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Create your first post

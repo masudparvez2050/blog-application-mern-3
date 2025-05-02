@@ -5,10 +5,24 @@ const {
   getUserById,
   updateUser,
   deleteUser,
+  getUserProfile,
+  updateUserProfile,
+  uploadProfilePicture,
+  upload,
 } = require("../controllers/userController");
 const { auth, admin } = require("../middleware/auth");
 
-// All routes are protected and require admin privileges
+// Profile routes - these need to come BEFORE the /:id routes to prevent "profile" being treated as an ID
+router.get("/profile", auth, getUserProfile);
+router.put("/profile", auth, updateUserProfile);
+router.post(
+  "/upload-profile-picture",
+  auth,
+  upload.single("image"),
+  uploadProfilePicture
+);
+
+// Admin routes
 router.get("/", auth, admin, getAllUsers);
 router.get("/:id", auth, admin, getUserById);
 router.put("/:id", auth, admin, updateUser);

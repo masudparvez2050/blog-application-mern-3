@@ -30,8 +30,8 @@ const postSchema = new mongoose.Schema(
     },
     categories: [
       {
-        type: String,
-        trim: true,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Category",
       },
     ],
     tags: [
@@ -54,12 +54,16 @@ const postSchema = new mongoose.Schema(
     ],
     status: {
       type: String,
-      enum: ["draft", "published", "suspended"],
+      enum: ["draft", "published", "suspended", "pending"],
       default: "draft",
     },
     isActive: {
       type: Boolean,
       default: true,
+    },
+    isFeatured: {
+      type: Boolean,
+      default: false,
     },
     views: {
       type: Number,
@@ -73,7 +77,6 @@ const postSchema = new mongoose.Schema(
 postSchema.index({
   title: "text",
   content: "text",
-  categories: "text",
   tags: "text",
 });
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { motion } from "framer-motion";
 import {
   FaNewspaper,
@@ -28,7 +28,7 @@ const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 import "react-quill/dist/quill.snow.css";
 
 export default function CreatePost() {
-  const { isAuthenticated, loading, isAdmin, user } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const router = useRouter();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,19 +53,21 @@ export default function CreatePost() {
     isFeatured: false,
   });
 
+  console.log(postData);
+
   // Handle tag input
   const [tagInput, setTagInput] = useState("");
 
   useEffect(() => {
-    // Redirect if not authenticated or not an admin
-    if (!loading && (!isAuthenticated || !isAdmin)) {
-      router.push("/login?redirect=/admin/posts/create");
+    // Redirect if not authenticated
+    if (!loading && !isAuthenticated) {
+      router.push("/login?redirect=/dashboard/create-post");
       return;
     }
 
     // Fetch categories
     fetchCategories();
-  }, [isAuthenticated, isAdmin, loading, router]);
+  }, [isAuthenticated, loading, router]);
 
   const fetchCategories = async () => {
     try {
@@ -133,7 +135,7 @@ export default function CreatePost() {
         setImagePreview(reader.result);
         setPostData({
           ...postData,
-          coverImage: reader.result,
+          coverImage: file,
         });
       };
       reader.readAsDataURL(file);
@@ -257,6 +259,11 @@ export default function CreatePost() {
 
     const status = publishStatus || postData.status;
 
+    // For users, prevent selecting "published" status - force to draft or pending
+    const finalStatus = ["draft", "pending"].includes(status)
+      ? status
+      : "pending";
+
     if (!validateForm()) {
       return;
     }
@@ -266,12 +273,23 @@ export default function CreatePost() {
     try {
       const token = localStorage.getItem("token");
 
-      // Prepare data for submission
+      // Prepare data for submission in JSON format
       const postSubmitData = {
         ...postData,
-        status,
+        status: finalStatus,
         categories: postData.categories.map((cat) => cat._id),
       };
+
+      // Check if coverImage is a File object, and if so, convert it to base64
+      if (postData.coverImage instanceof File) {
+        const reader = new FileReader();
+        const coverImagePromise = new Promise((resolve) => {
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(postData.coverImage);
+        });
+        
+        postSubmitData.coverImage = await coverImagePromise;
+      }
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/posts`,
@@ -287,11 +305,15 @@ export default function CreatePost() {
 
       if (response.ok) {
         const createdPost = await response.json();
-        setSuccessMessage(`Post created successfully as ${status}!`);
+        setSuccessMessage(
+          `Post created successfully as ${
+            finalStatus === "draft" ? "Draft" : "Pending Review"
+          }!`
+        );
 
-        // Redirect to post list after a short delay
+        // Redirect to dashboard after a short delay
         setTimeout(() => {
-          router.push("/admin/posts");
+          router.push("/dashboard");
         }, 2000);
       } else {
         const errorData = await response.json();
@@ -330,8 +352,7 @@ export default function CreatePost() {
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
-      opacity: 1,
-      y: 0,
+      opacity: 1, y: 0,
       transition: {
         type: "spring",
         stiffness: 100,
@@ -365,13 +386,13 @@ export default function CreatePost() {
   return (
     <div className="min-h-screen bg-gray-50 pt-10">
       {/* Floating Action Bar */}
-      <div className=" bg-white  shadow-md border-b">
+      <div className=" bg-white z-10 shadow-md border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex justify-between items-center">
           <div className="flex items-center space-x-4">
             <Link
-              href="/admin/posts"
+              href="/dashboard"
               className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-              title="Back to posts"
+              title="Back to dashboard"
             >
               <FaArrowLeft className="h-5 w-5 text-gray-600" />
             </Link>
@@ -395,12 +416,12 @@ export default function CreatePost() {
 
             <button
               type="button"
-              onClick={(e) => handleSubmit(e, "published")}
+              onClick={(e) => handleSubmit(e, "pending")}
               disabled={isSubmitting}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
             >
               <FaUpload className="mr-2 h-4 w-4" />
-              {isSubmitting ? "Publishing..." : "Publish"}
+              {isSubmitting ? "Submitting..." : "Submit for Review"}
             </button>
           </div>
         </div>
@@ -728,33 +749,12 @@ export default function CreatePost() {
                         <span>Submit for Review</span>
                       </div>
                     </label>
+                  </div>
 
-                    <label
-                      className={`flex items-center p-3 border rounded-md cursor-pointer transition-colors ${
-                        postData.status === "published"
-                          ? "bg-green-50 border-green-300 text-green-800"
-                          : "border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="status"
-                        value="published"
-                        checked={postData.status === "published"}
-                        onChange={handleChange}
-                        className="sr-only"
-                      />
-                      <div className="flex items-center">
-                        <FaUpload
-                          className={`mr-2 h-4 w-4 ${
-                            postData.status === "published"
-                              ? "text-green-600"
-                              : "text-gray-400"
-                          }`}
-                        />
-                        <span>Published</span>
-                      </div>
-                    </label>
+                  <div className="mt-2 text-xs text-gray-500 flex items-center">
+                    <FaInfoCircle className="mr-1 h-3 w-3" />
+                    Your post will be reviewed by an administrator before being
+                    published.
                   </div>
                 </motion.div>
 
@@ -766,11 +766,11 @@ export default function CreatePost() {
                         htmlFor="isFeatured"
                         className="font-medium text-gray-700 cursor-pointer"
                       >
-                        Featured Post
+                        Featured Post Request
                       </label>
                       <div
                         className="ml-2 text-gray-400 hover:text-gray-500"
-                        title="Featured posts appear prominently on the homepage"
+                        title="Request to have your post featured on the homepage"
                       >
                         <FaInfoCircle className="h-4 w-4" />
                       </div>
@@ -791,6 +791,9 @@ export default function CreatePost() {
                         }`}
                       ></label>
                     </div>
+                  </div>
+                  <div className="mt-1 text-xs text-gray-500">
+                    Featured status is subject to admin approval.
                   </div>
                 </motion.div>
 
@@ -827,16 +830,16 @@ export default function CreatePost() {
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                           ></path>
                         </svg>
-                        {postData.status === "published"
-                          ? "Publishing..."
+                        {postData.status === "pending"
+                          ? "Submitting..."
                           : "Saving..."}
                       </>
                     ) : (
                       <>
-                        {postData.status === "published" ? (
+                        {postData.status === "pending" ? (
                           <>
                             <FaUpload className="mr-2 h-4 w-4" />
-                            Publish
+                            Submit for Review
                           </>
                         ) : (
                           <>
@@ -847,23 +850,8 @@ export default function CreatePost() {
                       </>
                     )}
                   </button>
-                  <button
-                    type="button"
-                    onClick={(e) =>
-                      handleSubmit(
-                        e,
-                        postData.status === "published" ? "draft" : "published"
-                      )
-                    }
-                    disabled={isSubmitting}
-                    className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    {postData.status === "published"
-                      ? "Save as Draft"
-                      : "Publish Now"}
-                  </button>
                   <Link
-                    href="/admin/posts"
+                    href="/dashboard"
                     className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md text-sm text-center font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     <FaTimes className="mr-2 h-4 w-4" />
@@ -1051,7 +1039,7 @@ export default function CreatePost() {
                   <li>
                     Use categories and tags to help readers find your post
                   </li>
-                  <li>Preview your post before publishing</li>
+                  <li>Preview your post before submitting for review</li>
                 </motion.ul>
               </div>
             </motion.div>
