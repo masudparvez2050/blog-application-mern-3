@@ -970,7 +970,7 @@ export default function EditPost() {
                         />
                         <div className="flex items-center">
                           <FaCheck className="mr-2 h-4 w-4 text-gray-400" />
-                          <span>Published (Can't modify)</span>
+                          <span>Published (Can&apos;t modify)</span>
                         </div>
                       </label>
                     )}

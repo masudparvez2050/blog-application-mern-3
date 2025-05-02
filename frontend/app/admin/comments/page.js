@@ -65,7 +65,7 @@ export default function CommentManagement() {
       setCurrentPage(1);
       fetchComments();
     }
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, fetchComments]);
 
   const fetchComments = useCallback(async () => {
     try {
@@ -107,7 +107,13 @@ export default function CommentManagement() {
       setIsLoading(false);
       setIsSearching(false);
     }
-  }, [currentPage, filterStatus, debouncedSearchTerm, commentsPerPage]);
+  }, [
+    currentPage,
+    filterStatus,
+    debouncedSearchTerm,
+    commentsPerPage,
+    searchTerm,
+  ]);
 
   useEffect(() => {
     // Redirect if not authenticated or not an admin

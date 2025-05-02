@@ -113,7 +113,7 @@ export default function BlogsList() {
     };
 
     fetchPosts();
-  }, [debouncedSearchTerm, selectedCategory, currentPage]);
+  }, [debouncedSearchTerm, selectedCategory, currentPage, searchTerm]);
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
