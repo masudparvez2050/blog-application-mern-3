@@ -59,14 +59,6 @@ export default function CommentManagement() {
     };
   }, [searchTerm]);
 
-  // Trigger search when debounced search term changes
-  useEffect(() => {
-    if (debouncedSearchTerm !== "") {
-      setCurrentPage(1);
-      fetchComments();
-    }
-  }, [debouncedSearchTerm, fetchComments]);
-
   const fetchComments = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -114,6 +106,14 @@ export default function CommentManagement() {
     commentsPerPage,
     searchTerm,
   ]);
+
+  // Trigger search when debounced search term changes
+  useEffect(() => {
+    if (debouncedSearchTerm !== "") {
+      setCurrentPage(1);
+      fetchComments();
+    }
+  }, [debouncedSearchTerm, fetchComments]);
 
   useEffect(() => {
     // Redirect if not authenticated or not an admin
