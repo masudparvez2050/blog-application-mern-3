@@ -116,6 +116,8 @@ export default function BlogPost({ params }) {
   };
 
   const isAuthor = post && user && post.author._id === user._id;
+  const isAdmin = user && user.role === "admin";
+  console.log(isAdmin);
 
   if (loading) {
     return (
@@ -400,7 +402,7 @@ export default function BlogPost({ params }) {
   }
 
   return (
-    <article className="max-w-4xl mx-auto py-8">
+    <article className="max-w-4xl mx-auto py-8 m-10">
       {/* Post Header */}
       <div className="mb-8">
         <div className="flex flex-wrap gap-2 mb-4">
@@ -499,7 +501,11 @@ export default function BlogPost({ params }) {
       {isAuthor && (
         <div className="mb-12 flex justify-end">
           <Link
-            href={`/dashboard/edit/${post._id}`}
+            href={
+              isAdmin
+                ? `/admin/posts/edit/${post._id}`
+                : `/dashboard/edit/${post._id}`
+            }
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Edit Post

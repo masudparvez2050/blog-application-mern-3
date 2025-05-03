@@ -11,6 +11,8 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
 
+  console.log(user);
+
   // Handle scroll effect for navbar
   useEffect(() => {
     const handleScroll = () => {
@@ -39,9 +41,9 @@ export default function Navbar() {
           {/* Logo */}
           <Link
             href="/"
-            className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600"
+            className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600"
           >
-            BlogApp
+            Bloggenix
           </Link>
 
           {/* Desktop Navigation */}
@@ -69,17 +71,32 @@ export default function Navbar() {
             {isAuthenticated ? (
               <>
                 <Link
-                  href="/create-post"
+                  href={
+                    isAdmin ? "/admin/posts/create" : "/dashboard/create-post"
+                  }
                   className={`nav-link ${
                     pathname === "/create-post"
                       ? "text-blue-600 font-medium"
                       : "text-gray-600 hover:text-blue-600"
                   }`}
                 >
-                  Write
+                  Write Post
                 </Link>
                 <div className="relative group">
                   <button className="flex items-center space-x-1 text-gray-600 hover:text-blue-600 focus:outline-none">
+                    {user?.profilePicture ? (
+                      <img
+                        src={user.profilePicture}
+                        alt="Profile"
+                        className="h-8 w-8 rounded-full object-cover mr-2"
+                      />
+                    ) : (
+                      <div className="h-6 w-6 rounded-full bg-gray-300 mr-2 flex items-center justify-center">
+                        <span className="text-xs text-gray-600">
+                          {user?.name?.charAt(0) || "U"}
+                        </span>
+                      </div>
+                    )}
                     <span>Account</span>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -97,26 +114,29 @@ export default function Navbar() {
                     </svg>
                   </button>
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                    <Link
-                      href="/dashboard"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Dashboard
-                    </Link>
+                    {isAdmin ? (
+                      <Link
+                        href="/admin"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Admin Dashboard
+                      </Link>
+                    ) : (
+                      <Link
+                        href="/dashboard"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Dashboard
+                      </Link>
+                    )}
+
                     <Link
                       href="/profile"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Profile
                     </Link>
-                    {isAdmin && (
-                      <Link
-                        href="/admin"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        Admin Panel
-                      </Link>
-                    )}
+
                     <button
                       onClick={logout}
                       className="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-gray-100"

@@ -11,7 +11,37 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: "50mb" }));
+
+// Request logger for debugging
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.originalUrl}`);
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log("Request body type:", typeof req.body);
+    // Don't log entire body for security, but log shape
+    console.log("Request body keys:", Object.keys(req.body));
+  }
+  next();
+});
+
+// JSON parsing with error handling
+app.use(
+  express.json({
+    limit: "50mb",
+    verify: (req, res, buf, encoding) => {
+      try {
+        JSON.parse(buf);
+      } catch (e) {
+        res.status(400).json({
+          message: "Invalid JSON in request body",
+          error: e.message,
+          // Help debugging by showing beginning of body
+          receivedData: buf.toString().substring(0, 50) + "...",
+        });
+        throw e;
+      }
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // Connect to MongoDB
