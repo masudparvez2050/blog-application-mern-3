@@ -14,7 +14,13 @@ import {
 } from "react-icons/fa";
 
 export default function Profile() {
-  const { user, updateProfile, loading, isAuthenticated } = useAuth();
+  const {
+    user,
+    updateProfile,
+    loading,
+    isAuthenticated,
+    requestEmailVerification,
+  } = useAuth();
   const router = useRouter();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -201,9 +207,8 @@ export default function Profile() {
   const handleSendVerificationEmail = async () => {
     try {
       setIsSendingVerification(true);
-      const { requestEmailVerification } = useAuth();
 
-      // Use our context method to request verification email
+      // Use the requestEmailVerification function obtained from useAuth at the component level
       const result = await requestEmailVerification();
 
       setMessage({

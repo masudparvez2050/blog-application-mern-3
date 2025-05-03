@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../../context/AuthContext";
 import { mockFeaturedPostsDetails } from "@/app/data/mockPosts";
+import LikeDislikeButtons from "../../components/shared/LikeDislikeButtons";
 
 export default function BlogPost({ params }) {
   const { id } = params;
@@ -454,6 +455,22 @@ export default function BlogPost({ params }) {
         className="prose prose-lg max-w-none mb-12"
         dangerouslySetInnerHTML={{ __html: post.content }}
       />
+
+      {/* Like/Dislike Buttons */}
+      <div className="my-8 border-t border-b border-gray-200 py-4">
+        <div className="flex flex-wrap items-center justify-between">
+          <LikeDislikeButtons
+            postId={post._id}
+            initialLikes={post.likes?.length || 0}
+            initialDislikes={post.dislikes?.length || 0}
+          />
+
+          <div className="flex items-center mt-4 md:mt-0">
+            <span className="text-gray-600 mr-2">Share:</span>
+            {/* ... existing share buttons ... */}
+          </div>
+        </div>
+      </div>
 
       {/* Tags */}
       {post.tags && post.tags.length > 0 && (

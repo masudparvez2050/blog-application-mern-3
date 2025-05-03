@@ -12,6 +12,7 @@ const {
   getPostsByUserId,
   getPostsWithComments,
   getSimilarPosts,
+  getLikeStatus,
 } = require("../controllers/postController");
 const { auth, admin } = require("../middleware/auth");
 
@@ -25,8 +26,12 @@ router.get("/:id", getPostById);
 router.post("/", auth, createPost);
 router.put("/:id", auth, updatePost);
 router.delete("/:id", auth, deletePost);
+
+// Like/Dislike routes
 router.put("/:id/like", auth, likePost);
 router.put("/:id/dislike", auth, dislikePost);
+router.get("/:id/like-status", auth, getLikeStatus);
+
 router.get("/user/posts", auth, getUserPosts);
 router.get("/user/:userId", auth, getPostsByUserId);
 

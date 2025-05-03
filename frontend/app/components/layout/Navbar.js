@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 export default function Navbar() {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
@@ -85,11 +86,15 @@ export default function Navbar() {
                 <div className="relative group">
                   <button className="flex items-center space-x-1 text-gray-600 hover:text-blue-600 focus:outline-none">
                     {user?.profilePicture ? (
-                      <img
-                        src={user.profilePicture}
-                        alt="Profile"
-                        className="h-8 w-8 rounded-full object-cover mr-2"
-                      />
+                      <div className="h-8 w-8 relative rounded-full overflow-hidden mr-2">
+                        <Image
+                          src={user.profilePicture}
+                          alt="Profile"
+                          fill
+                          sizes="32px"
+                          style={{ objectFit: "cover" }}
+                        />
+                      </div>
                     ) : (
                       <div className="h-6 w-6 rounded-full bg-gray-300 mr-2 flex items-center justify-center">
                         <span className="text-xs text-gray-600">

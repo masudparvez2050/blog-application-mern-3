@@ -314,34 +314,54 @@ exports.deletePost = async (req, res) => {
 // @access  Private
 exports.likePost = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id);
+    const postId = req.params.id;
+    const userId = req.user._id;
+
+    const post = await Post.findById(postId);
 
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
     }
 
-    // Check if the post has already been liked by this user
-    if (post.likes.includes(req.user._id)) {
-      // User already liked the post, so remove the like
+    // Check if user already liked this post
+    const alreadyLiked = post.likes.includes(userId);
+
+    // Check if user previously disliked this post
+    const alreadyDisliked = post.dislikes.includes(userId);
+
+    // If user already liked the post, remove the like (toggle behavior)
+    if (alreadyLiked) {
       post.likes = post.likes.filter(
-        (like) => like.toString() !== req.user._id.toString()
+        (id) => id.toString() !== userId.toString()
       );
-    } else {
-      // Add like and remove from dislikes if present
-      post.likes.push(req.user._id);
+      await post.save();
+      return res.status(200).json({
+        message: "Like removed",
+        likes: post.likes.length,
+        dislikes: post.dislikes.length,
+        userAction: "none",
+      });
+    }
+
+    // If user previously disliked, remove the dislike
+    if (alreadyDisliked) {
       post.dislikes = post.dislikes.filter(
-        (dislike) => dislike.toString() !== req.user._id.toString()
+        (id) => id.toString() !== userId.toString()
       );
     }
 
+    // Add the like
+    post.likes.push(userId);
     await post.save();
 
-    res.json({ likes: post.likes, dislikes: post.dislikes });
+    res.status(200).json({
+      message: "Post liked successfully",
+      likes: post.likes.length,
+      dislikes: post.dislikes.length,
+      userAction: "liked",
+    });
   } catch (error) {
     console.error("Like post error:", error);
-    if (error.kind === "ObjectId") {
-      return res.status(404).json({ message: "Post not found" });
-    }
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -351,34 +371,86 @@ exports.likePost = async (req, res) => {
 // @access  Private
 exports.dislikePost = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id);
+    const postId = req.params.id;
+    const userId = req.user._id;
+
+    const post = await Post.findById(postId);
 
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
     }
 
-    // Check if the post has already been disliked by this user
-    if (post.dislikes.includes(req.user._id)) {
-      // User already disliked the post, so remove the dislike
+    // Check if user already disliked this post
+    const alreadyDisliked = post.dislikes.includes(userId);
+
+    // Check if user previously liked this post
+    const alreadyLiked = post.likes.includes(userId);
+
+    // If user already disliked the post, remove the dislike (toggle behavior)
+    if (alreadyDisliked) {
       post.dislikes = post.dislikes.filter(
-        (dislike) => dislike.toString() !== req.user._id.toString()
+        (id) => id.toString() !== userId.toString()
       );
-    } else {
-      // Add dislike and remove from likes if present
-      post.dislikes.push(req.user._id);
+      await post.save();
+      return res.status(200).json({
+        message: "Dislike removed",
+        likes: post.likes.length,
+        dislikes: post.dislikes.length,
+        userAction: "none",
+      });
+    }
+
+    // If user previously liked, remove the like
+    if (alreadyLiked) {
       post.likes = post.likes.filter(
-        (like) => like.toString() !== req.user._id.toString()
+        (id) => id.toString() !== userId.toString()
       );
     }
 
+    // Add the dislike
+    post.dislikes.push(userId);
     await post.save();
 
-    res.json({ likes: post.likes, dislikes: post.dislikes });
+    res.status(200).json({
+      message: "Post disliked successfully",
+      likes: post.likes.length,
+      dislikes: post.dislikes.length,
+      userAction: "disliked",
+    });
   } catch (error) {
     console.error("Dislike post error:", error);
-    if (error.kind === "ObjectId") {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Get Like/Dislike status for a post by current user
+// @route   GET /api/posts/:id/like-status
+// @access  Private
+exports.getLikeStatus = async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const userId = req.user._id;
+
+    const post = await Post.findById(postId);
+
+    if (!post) {
       return res.status(404).json({ message: "Post not found" });
     }
+
+    const userLiked = post.likes.includes(userId);
+    const userDisliked = post.dislikes.includes(userId);
+
+    let userAction = "none";
+    if (userLiked) userAction = "liked";
+    if (userDisliked) userAction = "disliked";
+
+    res.status(200).json({
+      likes: post.likes.length,
+      dislikes: post.dislikes.length,
+      userAction,
+    });
+  } catch (error) {
+    console.error("Get like status error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
