@@ -25,6 +25,12 @@ app.use((req, res, next) => {
 
 // Custom JSON parsing error handler
 app.use((req, res, next) => {
+  // Skip this middleware for multipart/form-data requests
+  const contentType = req.headers["content-type"] || "";
+  if (contentType.includes("multipart/form-data")) {
+    return next();
+  }
+
   let data = "";
 
   req.on("data", (chunk) => {

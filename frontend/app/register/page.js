@@ -1,18 +1,28 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, useTransition, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import FacebookLogin from "@greatsumini/react-facebook-login";
 import { motion } from "framer-motion";
-import { FaFacebook } from "react-icons/fa";
+import {
+  FaFacebook,
+  FaEye,
+  FaEyeSlash,
+  FaEnvelope,
+  FaLock,
+  FaUser,
+  FaArrowRight,
+} from "react-icons/fa";
+import { toast } from "react-hot-toast";
 
 // Component to handle search params retrieval
 function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
   const redirectPath = searchParams.get("redirect") || "/dashboard";
   const { register, oauthLogin } = useAuth();
 
@@ -24,6 +34,30 @@ function RegisterContent() {
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState({
+    password: false,
+    confirmPassword: false,
+  });
+  const [isFocused, setIsFocused] = useState({
+    name: false,
+    email: false,
+    password: false,
+    confirmPassword: false,
+  });
+
+  const handleFocus = (field) => {
+    setIsFocused((prev) => ({
+      ...prev,
+      [field]: true,
+    }));
+  };
+
+  const handleBlur = (field) => {
+    setIsFocused((prev) => ({
+      ...prev,
+      [field]: false,
+    }));
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -31,16 +65,28 @@ function RegisterContent() {
       ...formData,
       [name]: value,
     });
+
+    // Clear error when user types
+    if (error) setError("");
+  };
+
+  const togglePasswordVisibility = (field) => {
+    setShowPassword((prev) => ({
+      ...prev,
+      [field]: !prev[field],
+    }));
   };
 
   const validateForm = () => {
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
+      toast.error("Passwords do not match");
       return false;
     }
 
     if (formData.password.length < 6) {
       setError("Password must be at least 6 characters long");
+      toast.error("Password must be at least 6 characters long");
       return false;
     }
 
@@ -61,9 +107,13 @@ function RegisterContent() {
       // Remove confirmPassword since our API doesn't need it
       const { confirmPassword, ...userData } = formData;
       await register(userData);
-      router.push(redirectPath);
+      toast.success("Registration successful!");
+      startTransition(() => {
+        router.push(redirectPath);
+      });
     } catch (err) {
       setError(err.message || "Failed to register. Please try again.");
+      toast.error(err.message || "Registration failed");
     } finally {
       setIsLoading(false);
     }
@@ -73,9 +123,13 @@ function RegisterContent() {
     try {
       setIsLoading(true);
       await oauthLogin("google", credentialResponse.credential);
-      router.push(redirectPath);
+      toast.success("Google signup successful!");
+      startTransition(() => {
+        router.push(redirectPath);
+      });
     } catch (err) {
-      setError(err.message || "Google login failed. Please try again.");
+      setError(err.message || "Google signup failed. Please try again.");
+      toast.error("Google signup failed");
     } finally {
       setIsLoading(false);
     }
@@ -87,12 +141,16 @@ function RegisterContent() {
       // Check if the response has an accessToken
       if (response.accessToken) {
         await oauthLogin("facebook", response.accessToken);
-        router.push(redirectPath);
+        toast.success("Facebook signup successful!");
+        startTransition(() => {
+          router.push(redirectPath);
+        });
       } else {
-        throw new Error("Facebook login failed. Please try again.");
+        throw new Error("Facebook signup failed. Please try again.");
       }
     } catch (err) {
-      setError(err.message || "Facebook login failed. Please try again.");
+      setError(err.message || "Facebook signup failed. Please try again.");
+      toast.error("Facebook signup failed");
     } finally {
       setIsLoading(false);
     }
@@ -104,7 +162,8 @@ function RegisterContent() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
+        staggerChildren: 0.12,
+        delayChildren: 0.1,
       },
     },
   };
@@ -117,23 +176,31 @@ function RegisterContent() {
       transition: {
         type: "spring",
         stiffness: 100,
+        damping: 10,
       },
     },
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-50 via-white to-pink-50">
+      {/* Background decorative elements */}
+      <div className="absolute w-full h-full top-0 left-0 overflow-hidden -z-10">
+        <div className="absolute top-20 right-[10%] w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute top-40 left-[10%] w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 right-[30%] w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+
       <motion.div
         className="max-w-md w-full"
         initial="hidden"
         animate="visible"
         variants={containerVariants}
       >
-        <motion.div variants={itemVariants} className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Create your account
+        <motion.div variants={itemVariants} className="text-center mb-8">
+          <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-500">
+            Create Account
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-3 text-base text-gray-600">
             Join our blog community and start sharing your thoughts
           </p>
         </motion.div>
@@ -141,7 +208,10 @@ function RegisterContent() {
         {error && (
           <motion.div
             variants={itemVariants}
-            className="mt-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-sm"
+            className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm backdrop-blur-sm bg-opacity-80"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
           >
             <div className="flex">
               <div className="flex-shrink-0">
@@ -168,110 +238,188 @@ function RegisterContent() {
 
         <motion.div
           variants={itemVariants}
-          className="mt-8 bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10"
+          className="backdrop-blur-sm bg-white bg-opacity-70 py-8 px-6 shadow-2xl sm:rounded-2xl sm:px-10 border border-gray-100/50"
         >
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700"
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            <div className="relative">
+              <div
+                className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 transition-all duration-300 ${
+                  isFocused.name || formData.name
+                    ? "text-blue-600 -translate-y-9 text-xs"
+                    : ""
+                }`}
               >
-                Full Name
-              </label>
-              <div className="mt-1">
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="John Doe"
-                  value={formData.name}
-                  onChange={handleChange}
-                />
+                <FaUser className="inline mr-1" />
+                <span>Full Name</span>
               </div>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                autoComplete="name"
+                required
+                className={`appearance-none block w-full px-4 py-3.5 border ${
+                  error
+                    ? "border-red-300"
+                    : isFocused.name
+                    ? "border-blue-500"
+                    : "border-gray-300"
+                } rounded-xl bg-white/50 placeholder-transparent focus:outline-none focus:ring-2 ${
+                  error ? "focus:ring-red-200" : "focus:ring-blue-200"
+                } focus:border-blue-500 transition-all duration-200`}
+                value={formData.name}
+                onChange={handleChange}
+                onFocus={() => handleFocus("name")}
+                onBlur={() => handleBlur("name")}
+                placeholder="Full Name"
+              />
             </div>
 
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
+            <div className="relative">
+              <div
+                className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 transition-all duration-300 ${
+                  isFocused.email || formData.email
+                    ? "text-blue-600 -translate-y-9 text-xs"
+                    : ""
+                }`}
               >
-                Email address
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="you@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                />
+                <FaEnvelope className="inline mr-1" />
+                <span>Email Address</span>
               </div>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                className={`appearance-none block w-full px-4 py-3.5 border ${
+                  error
+                    ? "border-red-300"
+                    : isFocused.email
+                    ? "border-blue-500"
+                    : "border-gray-300"
+                } rounded-xl bg-white/50 placeholder-transparent focus:outline-none focus:ring-2 ${
+                  error ? "focus:ring-red-200" : "focus:ring-blue-200"
+                } focus:border-blue-500 transition-all duration-200`}
+                value={formData.email}
+                onChange={handleChange}
+                onFocus={() => handleFocus("email")}
+                onBlur={() => handleBlur("email")}
+                placeholder="Email Address"
+              />
             </div>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
+            <div className="relative">
+              <div
+                className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 transition-all duration-300 ${
+                  isFocused.password || formData.password
+                    ? "text-blue-600 -translate-y-9 text-xs"
+                    : ""
+                }`}
               >
-                Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                />
+                <FaLock className="inline mr-1" />
+                <span>Password</span>
               </div>
-              <p className="mt-1 text-xs text-gray-500">
+              <input
+                id="password"
+                name="password"
+                type={showPassword.password ? "text" : "password"}
+                autoComplete="new-password"
+                required
+                className={`appearance-none block w-full px-4 py-3.5 border ${
+                  error
+                    ? "border-red-300"
+                    : isFocused.password
+                    ? "border-blue-500"
+                    : "border-gray-300"
+                } rounded-xl bg-white/50 placeholder-transparent focus:outline-none focus:ring-2 ${
+                  error ? "focus:ring-red-200" : "focus:ring-blue-200"
+                } focus:border-blue-500 transition-all duration-200 pr-10`}
+                value={formData.password}
+                onChange={handleChange}
+                onFocus={() => handleFocus("password")}
+                onBlur={() => handleBlur("password")}
+                placeholder="Password"
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                onClick={() => togglePasswordVisibility("password")}
+                aria-label={
+                  showPassword.password ? "Hide password" : "Show password"
+                }
+              >
+                {showPassword.password ? (
+                  <FaEyeSlash className="h-5 w-5" />
+                ) : (
+                  <FaEye className="h-5 w-5" />
+                )}
+              </button>
+              <p className="mt-1 text-xs text-gray-500 ml-1">
                 Must be at least 6 characters
               </p>
             </div>
 
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-gray-700"
+            <div className="relative">
+              <div
+                className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 transition-all duration-300 ${
+                  isFocused.confirmPassword || formData.confirmPassword
+                    ? "text-blue-600 -translate-y-9 text-xs"
+                    : ""
+                }`}
               >
-                Confirm Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="••••••••"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                />
+                <FaLock className="inline mr-1" />
+                <span>Confirm Password</span>
               </div>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showPassword.confirmPassword ? "text" : "password"}
+                autoComplete="new-password"
+                required
+                className={`appearance-none block w-full px-4 py-3.5 border ${
+                  error
+                    ? "border-red-300"
+                    : isFocused.confirmPassword
+                    ? "border-blue-500"
+                    : "border-gray-300"
+                } rounded-xl bg-white/50 placeholder-transparent focus:outline-none focus:ring-2 ${
+                  error ? "focus:ring-red-200" : "focus:ring-blue-200"
+                } focus:border-blue-500 transition-all duration-200 pr-10`}
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                onFocus={() => handleFocus("confirmPassword")}
+                onBlur={() => handleBlur("confirmPassword")}
+                placeholder="Confirm Password"
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                onClick={() => togglePasswordVisibility("confirmPassword")}
+                aria-label={
+                  showPassword.confirmPassword
+                    ? "Hide password"
+                    : "Show password"
+                }
+              >
+                {showPassword.confirmPassword ? (
+                  <FaEyeSlash className="h-5 w-5" />
+                ) : (
+                  <FaEye className="h-5 w-5" />
+                )}
+              </button>
             </div>
 
-            <div>
+            <div className="pt-2">
               <button
                 type="submit"
-                disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300"
+                disabled={isLoading || isPending}
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 font-medium disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-lg shadow-md shadow-indigo-500/30"
               >
-                {isLoading ? (
+                {isLoading || isPending ? (
                   <span className="flex items-center">
                     <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
@@ -293,26 +441,29 @@ function RegisterContent() {
                     Creating account...
                   </span>
                 ) : (
-                  "Create Account"
+                  <span className="flex items-center">
+                    Create Account
+                    <FaArrowRight className="ml-2 opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                  </span>
                 )}
               </button>
             </div>
           </form>
 
-          <div className="mt-6">
+          <div className="mt-7">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+                <div className="w-full border-t border-gray-300/50"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">
+                <span className="px-4 bg-white bg-opacity-70 text-gray-500 backdrop-blur-sm">
                   Or continue with
                 </span>
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <div>
+            <div className="mt-6 grid grid-cols-2 gap-4">
+              <div className="transform hover:scale-105 transition-transform">
                 <GoogleOAuthProvider
                   clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
                 >
@@ -325,54 +476,56 @@ function RegisterContent() {
                     type="standard"
                     width="100%"
                     logo_alignment="center"
-                    shape="rectangular"
+                    shape="pill"
                     text="signup_with"
                   />
                 </GoogleOAuthProvider>
               </div>
-              <FacebookLogin
-                appId={process.env.NEXT_PUBLIC_FACEBOOK_APP_ID}
-                autoLoad={false}
-                fields="name,email,picture"
-                callback={handleFacebookLogin}
-                render={(renderProps) => (
-                  <button
-                    onClick={renderProps.onClick}
-                    className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-                    disabled={isLoading}
-                  >
-                    <FaFacebook className="h-5 w-5 text-blue-600 mr-2" />
-                    <span>Facebook</span>
-                  </button>
-                )}
-              />
+              <div className="transform hover:scale-105 transition-transform">
+                <FacebookLogin
+                  appId={process.env.NEXT_PUBLIC_FACEBOOK_APP_ID}
+                  autoLoad={false}
+                  fields="name,email,picture"
+                  callback={handleFacebookLogin}
+                  render={(renderProps) => (
+                    <button
+                      onClick={renderProps.onClick}
+                      className="w-full inline-flex justify-center items-center py-2.5 px-4 border border-gray-300 rounded-full shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                      disabled={isLoading}
+                    >
+                      <FaFacebook className="h-5 w-5 text-blue-600 mr-2" />
+                      <span>Facebook</span>
+                    </button>
+                  )}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="mt-6 text-center">
+          <div className="mt-7 text-center">
             <p className="text-sm text-gray-600">
               Already have an account?{" "}
               <Link
                 href="/login"
-                className="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200"
+                className="font-semibold text-blue-600 hover:text-blue-700 hover:underline transition-all duration-200"
               >
-                Sign in
+                Sign in instead
               </Link>
             </p>
           </div>
 
-          <div className="mt-6 text-xs text-center text-gray-500">
+          <div className="mt-5 text-xs text-center text-gray-500">
             By signing up, you agree to our{" "}
             <Link
               href="/terms"
-              className="font-medium text-gray-700 hover:text-gray-900"
+              className="font-medium text-gray-700 hover:text-gray-900 hover:underline transition-colors"
             >
               Terms of Service
             </Link>{" "}
             and{" "}
             <Link
               href="/privacy"
-              className="font-medium text-gray-700 hover:text-gray-900"
+              className="font-medium text-gray-700 hover:text-gray-900 hover:underline transition-colors"
             >
               Privacy Policy
             </Link>
@@ -386,10 +539,15 @@ function RegisterContent() {
 // Loading fallback component
 function RegisterLoadingFallback() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
+    <div className="min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-50 via-white to-pink-50">
       <div className="max-w-md w-full text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading...</p>
+        <div className="relative w-20 h-20 mx-auto">
+          <div className="absolute top-0 w-full h-full rounded-full border-4 border-indigo-200 opacity-30"></div>
+          <div className="absolute top-0 w-full h-full rounded-full border-t-4 border-indigo-600 animate-spin"></div>
+        </div>
+        <p className="mt-4 text-indigo-600 font-medium">
+          Setting up your account...
+        </p>
       </div>
     </div>
   );

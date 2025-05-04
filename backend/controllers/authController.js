@@ -72,8 +72,8 @@ exports.register = async (req, res) => {
         // Check if we're in development mode or missing email credentials
         if (
           process.env.NODE_ENV === "development" ||
-          !process.env.EMAIL_USERNAME ||
-          !process.env.EMAIL_PASSWORD
+          !process.env.EMAIL_SERVER_USER ||
+          !process.env.EMAIL_SERVER_PASSWORD
         ) {
           // Use logEmailInDevelopment function for development
           logEmailInDevelopment(
@@ -240,8 +240,8 @@ exports.resendVerification = async (req, res) => {
       // Check if we're in development mode or missing email credentials
       if (
         process.env.NODE_ENV === "development" ||
-        !process.env.EMAIL_USERNAME ||
-        !process.env.EMAIL_PASSWORD
+        !process.env.EMAIL_SERVER_USER ||
+        !process.env.EMAIL_SERVER_PASSWORD
       ) {
         // Use logEmailInDevelopment function for development
         logEmailInDevelopment(
@@ -593,8 +593,8 @@ exports.forgotPassword = async (req, res) => {
       // Check if we're in development mode or missing email credentials
       if (
         process.env.NODE_ENV === "development" ||
-        !process.env.EMAIL_USERNAME ||
-        !process.env.EMAIL_PASSWORD
+        !process.env.EMAIL_SERVER_USER ||
+        !process.env.EMAIL_SERVER_PASSWORD
       ) {
         // Use logEmailInDevelopment function for development
         logEmailInDevelopment(

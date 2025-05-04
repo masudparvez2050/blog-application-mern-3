@@ -3,6 +3,8 @@ import "./globals.css";
 import { AuthProvider } from "./context/AuthContext";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
+import FloationgButton from "./components/layout/FloationgButton";
+import Toast from "./components/layout/Toast";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -30,8 +32,10 @@ export default function RootLayout({ children }) {
           <Navbar />
           <main className="flex-grow container mx-auto px-4 py-8">
             {children}
+            <FloationgButton />
           </main>
           <Footer />
+          <Toast/>
         </AuthProvider>
       </body>
     </html>
