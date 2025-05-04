@@ -12,8 +12,6 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
 
-  console.log(user);
-
   // Handle scroll effect for navbar
   useEffect(() => {
     const handleScroll = () => {

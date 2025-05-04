@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { OAuth2Client } = require("google-auth-library");
 const crypto = require("crypto");
-const nodemailer = require("nodemailer");
+const { sendEmail, logEmailInDevelopment } = require("../utils/sendEmail");
 
 // Create Google OAuth client
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -75,28 +75,22 @@ exports.register = async (req, res) => {
           !process.env.EMAIL_USERNAME ||
           !process.env.EMAIL_PASSWORD
         ) {
-          // Development fallback - log the verification URL to console
-          console.log("\n--- DEVELOPMENT MODE: Email Verification ---");
-          console.log(
-            "Verification token (for development only):",
-            verificationToken
-          );
-          console.log("Verification URL:", verificationUrl);
-          console.log("--------------------------------\n");
-        } else {
-          // Setup email transporter for production
-          const transporter = nodemailer.createTransport({
-            service: process.env.EMAIL_SERVICE || "gmail",
-            auth: {
-              user: process.env.EMAIL_USERNAME,
-              pass: process.env.EMAIL_PASSWORD,
+          // Use logEmailInDevelopment function for development
+          logEmailInDevelopment(
+            {
+              to: user.email,
+              subject: "Please verify your email address",
+              html: message,
             },
-          });
-
-          // Send email
-          await transporter.sendMail({
+            {
+              verificationToken,
+              verificationUrl,
+            }
+          );
+        } else {
+          // Use sendEmail function for production
+          await sendEmail({
             to: user.email,
-            from: process.env.EMAIL_FROM || "noreply@blogapp.com",
             subject: "Please verify your email address",
             html: message,
           });
@@ -249,14 +243,18 @@ exports.resendVerification = async (req, res) => {
         !process.env.EMAIL_USERNAME ||
         !process.env.EMAIL_PASSWORD
       ) {
-        // Development fallback - log the verification URL to console
-        console.log("\n--- DEVELOPMENT MODE: Email Verification (Resend) ---");
-        console.log(
-          "Verification token (for development only):",
-          verificationToken
+        // Use logEmailInDevelopment function for development
+        logEmailInDevelopment(
+          {
+            to: user.email,
+            subject: "Verify Your Email Address",
+            html: message,
+          },
+          {
+            verificationToken,
+            verificationUrl,
+          }
         );
-        console.log("Verification URL:", verificationUrl);
-        console.log("--------------------------------\n");
 
         return res.status(200).json({
           message: "Verification email has been sent",
@@ -270,19 +268,9 @@ exports.resendVerification = async (req, res) => {
         });
       }
 
-      // Setup email transporter for production
-      const transporter = nodemailer.createTransport({
-        service: process.env.EMAIL_SERVICE || "gmail",
-        auth: {
-          user: process.env.EMAIL_USERNAME,
-          pass: process.env.EMAIL_PASSWORD,
-        },
-      });
-
-      // Send email
-      await transporter.sendMail({
+      // Use sendEmail function for production
+      await sendEmail({
         to: user.email,
-        from: process.env.EMAIL_FROM || "noreply@blogapp.com",
         subject: "Verify Your Email Address",
         html: message,
       });
@@ -608,11 +596,18 @@ exports.forgotPassword = async (req, res) => {
         !process.env.EMAIL_USERNAME ||
         !process.env.EMAIL_PASSWORD
       ) {
-        // Development fallback - log the reset URL to console
-        console.log("\n--- DEVELOPMENT MODE: Password Reset ---");
-        console.log("Reset token (for development only):", resetToken);
-        console.log("Reset URL:", resetUrl);
-        console.log("--------------------------------\n");
+        // Use logEmailInDevelopment function for development
+        logEmailInDevelopment(
+          {
+            to: user.email,
+            subject: "Password Reset Request",
+            html: message,
+          },
+          {
+            resetToken,
+            resetUrl,
+          }
+        );
 
         // Return success response
         return res.status(200).json({
@@ -628,19 +623,9 @@ exports.forgotPassword = async (req, res) => {
         });
       }
 
-      // Setup email transporter for production
-      const transporter = nodemailer.createTransport({
-        service: process.env.EMAIL_SERVICE || "gmail",
-        auth: {
-          user: process.env.EMAIL_USERNAME,
-          pass: process.env.EMAIL_PASSWORD,
-        },
-      });
-
-      // Send email
-      await transporter.sendMail({
+      // Use sendEmail function for production
+      await sendEmail({
         to: user.email,
-        from: process.env.EMAIL_FROM || "noreply@blogapp.com",
         subject: "Password Reset Request",
         html: message,
       });

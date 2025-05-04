@@ -118,7 +118,6 @@ export default function BlogPost({ params }) {
 
   const isAuthor = post && user && post.author._id === user._id;
   const isAdmin = user && user.role === "admin";
-  console.log(isAdmin);
 
   if (loading) {
     return (
@@ -463,6 +462,7 @@ export default function BlogPost({ params }) {
             postId={post._id}
             initialLikes={post.likes?.length || 0}
             initialDislikes={post.dislikes?.length || 0}
+            
           />
 
           <div className="flex items-center mt-4 md:mt-0">

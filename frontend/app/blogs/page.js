@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import Image from "next/image";
+import { useState, useEffect } from "react";
 import { mockPosts } from "../data/mockPosts";
+import PostCard from "../components/shared/PostCard";
 
 // Custom debounce hook
 function useDebounce(value, delay) {
@@ -36,7 +35,7 @@ export default function BlogsList() {
   // Apply the debounce hook to searchTerm with 500ms delay
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Rest of the code remains the same, but change the useEffect dependency from searchTerm to debouncedSearchTerm
+  
   useEffect(() => {
     const fetchPosts = async () => {
       // existing fetchPosts code
@@ -276,79 +275,7 @@ export default function BlogsList() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {posts.map((post) => (
-                <Link
-                  key={post._id}
-                  href={`/blogs/${post._id}`}
-                  className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow"
-                >
-                  <div className="relative h-48 w-full">
-                    <Image
-                      src={post.coverImage}
-                      alt={post.title}
-                      fill
-                      style={{ objectFit: "cover" }}
-                    />
-                  </div>
-                  <div className="p-6">
-                    <div className="flex items-center space-x-2 mb-2">
-                      {post.categories.slice(0, 2).map((category, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full"
-                        >
-                          {category.name}
-                        </span>
-                      ))}
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      {post.title}
-                    </h3>
-                    <p className="text-gray-600 mb-4">{post.excerpt}</p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className="relative h-10 w-10 rounded-full overflow-hidden mr-4">
-                          <Image
-                            src={post.author.profilePicture}
-                            alt={post.author.name}
-                            fill
-                            style={{ objectFit: "cover" }}
-                          />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            {post.author.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {formatDate(post.createdAt)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center text-gray-500 text-sm">
-                        <svg
-                          className="h-4 w-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          ></path>
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          ></path>
-                        </svg>
-                        {post.views}
-                      </div>
-                    </div>
-                  </div>
-                </Link>
+                <PostCard key={post.id} post={post} />
               ))}
             </div>
 
