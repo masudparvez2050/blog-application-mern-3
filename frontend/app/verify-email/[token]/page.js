@@ -10,7 +10,7 @@ import { useAuth } from "../../context/AuthContext";
 export default function VerifyEmail() {
   const { token } = useParams();
   const router = useRouter();
-  const { updateUser } = useAuth();
+  const { updateUser, logout } = useAuth();
 
   const [isVerifying, setIsVerifying] = useState(true);
   const [verificationStatus, setVerificationStatus] = useState({
@@ -49,6 +49,12 @@ export default function VerifyEmail() {
           // Update the user state in context
           if (data.user) {
             updateUser({ isVerified: true });
+
+            // Log user out immediately after successful verification
+            setTimeout(() => {
+              logout();
+              router.push("/login");
+            }, 2000); // Short delay to allow the user to see the success message
           }
         } else {
           setVerificationStatus({
@@ -72,7 +78,7 @@ export default function VerifyEmail() {
     };
 
     verifyToken();
-  }, [token, updateUser]);
+  }, [token, updateUser, logout, router]);
 
   // Animation variants
   const containerVariants = {
@@ -125,29 +131,21 @@ export default function VerifyEmail() {
           } border-t-4`}
         >
           {verificationStatus.isValid ? (
-            <FaCheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
+            <>
+              <FaCheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
+              <h1 className="text-2xl font-bold mb-2">Email Verified!</h1>
+              <p className="text-gray-600 mb-6">{verificationStatus.message}</p>
+              <p className="text-sm text-gray-600 mb-2">
+                You will be logged out and redirected to the login page in a
+                moment...
+              </p>
+            </>
           ) : (
-            <FaTimesCircle className="mx-auto h-16 w-16 text-red-500 mb-4" />
-          )}
-
-          <h1 className="text-2xl font-bold mb-2">
-            {verificationStatus.isValid
-              ? "Email Verified!"
-              : "Verification Failed"}
-          </h1>
-
-          <p className="text-gray-600 mb-6">{verificationStatus.message}</p>
-
-          <div className="space-y-4">
-            {verificationStatus.isValid ? (
-              <Link
-                href="/login"
-                className="inline-block w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-              >
-                Go to Login
-              </Link>
-            ) : (
-              <>
+            <>
+              <FaTimesCircle className="mx-auto h-16 w-16 text-red-500 mb-4" />
+              <h1 className="text-2xl font-bold mb-2">Verification Failed</h1>
+              <p className="text-gray-600 mb-6">{verificationStatus.message}</p>
+              <div className="space-y-4">
                 <Link
                   href="/login"
                   className="inline-block w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
@@ -162,9 +160,9 @@ export default function VerifyEmail() {
                   </Link>
                   &nbsp;and request a new verification email.
                 </p>
-              </>
-            )}
-          </div>
+              </div>
+            </>
+          )}
         </motion.div>
       </motion.div>
     </div>
