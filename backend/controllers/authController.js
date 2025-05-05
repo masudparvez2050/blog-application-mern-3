@@ -69,32 +69,39 @@ exports.register = async (req, res) => {
       `;
 
       try {
-        // Check if we're in development mode or missing email credentials
-        if (
-          process.env.NODE_ENV === "development" ||
-          !process.env.EMAIL_SERVER_USER ||
-          !process.env.EMAIL_SERVER_PASSWORD
-        ) {
-          // Use logEmailInDevelopment function for development
-          logEmailInDevelopment(
-            {
-              to: user.email,
-              subject: "Please verify your email address",
-              html: message,
-            },
-            {
-              verificationToken,
-              verificationUrl,
-            }
-          );
-        } else {
-          // Use sendEmail function for production
-          await sendEmail({
-            to: user.email,
-            subject: "Please verify your email address",
-            html: message,
-          });
-        }
+        // // Check if we're in development mode or missing email credentials
+        // if (
+        //   process.env.NODE_ENV === "development" ||
+        //   !process.env.EMAIL_SERVER_USER ||
+        //   !process.env.EMAIL_SERVER_PASSWORD
+        // ) {
+        //   // Use logEmailInDevelopment function for development
+        //   logEmailInDevelopment(
+        //     {
+        //       to: user.email,
+        //       subject: "Please verify your email address",
+        //       html: message,
+        //     },
+        //     {
+        //       verificationToken,
+        //       verificationUrl,
+        //     }
+        //   );
+        // } else {
+        //   // Use sendEmail function for production
+        //   await sendEmail({
+        //     to: user.email,
+        //     subject: "Please verify your email address",
+        //     html: message,
+        //   });
+        // }
+
+        // Use sendEmail function for production
+        await sendEmail({
+          to: user.email,
+          subject: "Please verify your email address",
+          html: message,
+        });
 
         // Return user data and token
         res.status(201).json({
@@ -238,35 +245,35 @@ exports.resendVerification = async (req, res) => {
 
     try {
       // Check if we're in development mode or missing email credentials
-      if (
-        process.env.NODE_ENV === "development" ||
-        !process.env.EMAIL_SERVER_USER ||
-        !process.env.EMAIL_SERVER_PASSWORD
-      ) {
-        // Use logEmailInDevelopment function for development
-        logEmailInDevelopment(
-          {
-            to: user.email,
-            subject: "Verify Your Email Address",
-            html: message,
-          },
-          {
-            verificationToken,
-            verificationUrl,
-          }
-        );
+      // if (
+      //   process.env.NODE_ENV === "development" ||
+      //   !process.env.EMAIL_SERVER_USER ||
+      //   !process.env.EMAIL_SERVER_PASSWORD
+      // ) {
+      //   // Use logEmailInDevelopment function for development
+      //   logEmailInDevelopment(
+      //     {
+      //       to: user.email,
+      //       subject: "Verify Your Email Address",
+      //       html: message,
+      //     },
+      //     {
+      //       verificationToken,
+      //       verificationUrl,
+      //     }
+      //   );
 
-        return res.status(200).json({
-          message: "Verification email has been sent",
-          // Include the token in development mode for testing
-          ...(process.env.NODE_ENV === "development" && {
-            devInfo: {
-              verificationToken,
-              verificationUrl,
-            },
-          }),
-        });
-      }
+      //   return res.status(200).json({
+      //     message: "Verification email has been sent",
+      //     // Include the token in development mode for testing
+      //     ...(process.env.NODE_ENV === "development" && {
+      //       devInfo: {
+      //         verificationToken,
+      //         verificationUrl,
+      //       },
+      //     }),
+      //   });
+      // }
 
       // Use sendEmail function for production
       await sendEmail({
@@ -591,37 +598,37 @@ exports.forgotPassword = async (req, res) => {
 
     try {
       // Check if we're in development mode or missing email credentials
-      if (
-        process.env.NODE_ENV === "development" ||
-        !process.env.EMAIL_SERVER_USER ||
-        !process.env.EMAIL_SERVER_PASSWORD
-      ) {
-        // Use logEmailInDevelopment function for development
-        logEmailInDevelopment(
-          {
-            to: user.email,
-            subject: "Password Reset Request",
-            html: message,
-          },
-          {
-            resetToken,
-            resetUrl,
-          }
-        );
+      // if (
+      //   process.env.NODE_ENV === "development" ||
+      //   !process.env.EMAIL_SERVER_USER ||
+      //   !process.env.EMAIL_SERVER_PASSWORD
+      // ) {
+      //   // Use logEmailInDevelopment function for development
+      //   logEmailInDevelopment(
+      //     {
+      //       to: user.email,
+      //       subject: "Password Reset Request",
+      //       html: message,
+      //     },
+      //     {
+      //       resetToken,
+      //       resetUrl,
+      //     }
+      //   );
 
-        // Return success response
-        return res.status(200).json({
-          message:
-            "If an account with that email exists, a password reset link has been sent.",
-          // Include the token in development mode for testing
-          ...(process.env.NODE_ENV === "development" && {
-            devInfo: {
-              resetToken,
-              resetUrl,
-            },
-          }),
-        });
-      }
+      //   // Return success response
+      //   return res.status(200).json({
+      //     message:
+      //       "If an account with that email exists, a password reset link has been sent.",
+      //     // Include the token in development mode for testing
+      //     ...(process.env.NODE_ENV === "development" && {
+      //       devInfo: {
+      //         resetToken,
+      //         resetUrl,
+      //       },
+      //     }),
+      //   });
+      // }
 
       // Use sendEmail function for production
       await sendEmail({
