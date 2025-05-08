@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+<<<<<<< HEAD
+=======
+import {infoData} from "./../data/TestData";
+>>>>>>> 315e87c (:message)
 
 // export const metadata = {
 //   title: "Contact Us | Blog Application",
@@ -524,6 +528,7 @@ export default function ContactPage() {
             viewport={{ once: true, amount: 0.2 }}
             variants={containerVariants}
           >
+<<<<<<< HEAD
             {[
               {
                 q: "How do I create an account?",
@@ -550,6 +555,9 @@ export default function ContactPage() {
                 a: "We don't allow plagiarized content, hate speech, explicit material, or content that violates copyright laws. Please review our community guidelines for more details.",
               },
             ].map((faq, i) => (
+=======
+            {infoData.map((faq, i) => (
+>>>>>>> 315e87c (:message)
               <motion.div
                 key={i}
                 variants={itemVariants}

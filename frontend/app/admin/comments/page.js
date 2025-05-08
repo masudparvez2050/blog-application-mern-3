@@ -17,12 +17,23 @@ import {
   FaFlag,
   FaSpinner,
   FaFilter,
+<<<<<<< HEAD
   FaSort,
+=======
+>>>>>>> 315e87c (:message)
   FaCommentAlt,
   FaChevronDown,
   FaChevronRight,
   FaExclamationTriangle,
 } from "react-icons/fa";
+<<<<<<< HEAD
+=======
+import { getContainerVariants, getItemVariants } from "@/app/utils/animation";
+
+
+const containerVariants = getContainerVariants(0.5); // custom stagger
+const itemVariants = getItemVariants({ y: 20, duration: 0.8 }); // custom values
+>>>>>>> 315e87c (:message)
 
 // Debounce utility function
 const debounce = (func, delay) => {
@@ -250,6 +261,7 @@ export default function CommentManagement() {
     }
   };
 
+<<<<<<< HEAD
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -272,6 +284,9 @@ export default function CommentManagement() {
       },
     },
   };
+=======
+
+>>>>>>> 315e87c (:message)
 
   const truncateText = (text, maxLength) => {
     if (!text) return "";

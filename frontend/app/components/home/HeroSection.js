@@ -3,6 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
+<<<<<<< HEAD
+=======
+import "@/app/globals.css";
+>>>>>>> 315e87c (:message)
 
 export default function HeroSection() {
   const [scrollY, setScrollY] = useState(0);
@@ -158,6 +162,7 @@ export default function HeroSection() {
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* Additional animations */}
       <style jsx>{`
         @keyframes shimmer {
@@ -210,6 +215,9 @@ export default function HeroSection() {
             linear-gradient(to bottom, #e5e7eb 1px, transparent 1px);
         }
       `}</style>
+=======
+    
+>>>>>>> 315e87c (:message)
     </section>
   );
 }

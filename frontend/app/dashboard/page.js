@@ -6,6 +6,10 @@ import Image from "next/image";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+<<<<<<< HEAD
+=======
+import { getContainerVariants, getItemVariants } from "../utils/animation";
+>>>>>>> 315e87c (:message)
 import {
   FaPlus,
   FaEye,
@@ -23,6 +27,12 @@ import {
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 
+<<<<<<< HEAD
+=======
+const containerVariants = getContainerVariants(0.5); // custom stagger
+const itemVariants = getItemVariants({ y: 20, duration: 0.8 }); // custom values
+
+>>>>>>> 315e87c (:message)
 export default function Dashboard() {
   const router = useRouter();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -162,6 +172,7 @@ export default function Dashboard() {
     }
   };
 
+<<<<<<< HEAD
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -186,6 +197,8 @@ export default function Dashboard() {
     },
   };
 
+=======
+>>>>>>> 315e87c (:message)
   if (authLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-gray-50 to-white">

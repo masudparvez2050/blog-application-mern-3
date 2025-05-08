@@ -6,6 +6,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "../../context/AuthContext";
 import { motion } from "framer-motion";
+<<<<<<< HEAD
+=======
+import { getContainerVariants, getItemVariants } from "@/app/utils/animation";
+import {quillModules} from "../../data/TestData";
+>>>>>>> 315e87c (:message)
 import {
   FaNewspaper,
   FaArrowLeft,
@@ -23,6 +28,13 @@ import {
 } from "react-icons/fa";
 import dynamic from "next/dynamic";
 
+<<<<<<< HEAD
+=======
+
+const containerVariants = getContainerVariants(0.5); // custom stagger
+const itemVariants = getItemVariants({ y: 20, duration: 0.8 }); // custom values
+
+>>>>>>> 315e87c (:message)
 // Import the rich text editor component dynamically to avoid SSR issues
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 import "react-quill/dist/quill.snow.css";
@@ -338,6 +350,7 @@ export default function CreatePost() {
     }
   }, [errorMessage, successMessage]);
 
+<<<<<<< HEAD
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -375,6 +388,11 @@ export default function CreatePost() {
       ["blockquote", "code-block"],
     ],
   };
+=======
+
+
+
+>>>>>>> 315e87c (:message)
 
   if (loading) {
     return (
