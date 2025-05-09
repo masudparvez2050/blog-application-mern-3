@@ -3,10 +3,16 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useState } from "react";
+<<<<<<< HEAD
+=======
+import { containerVariantsTwo, itemVariantsTwo, buttonVariants, glowVariants } from "@/app/utils/animation";
+
+>>>>>>> 315e87c (:message)
 
 export default function CallToActionSection() {
   const [isHovered, setIsHovered] = useState(false);
 
+<<<<<<< HEAD
   const containerVariants = {
     hidden: { opacity: 0, y: 50 },
     visible: {
@@ -50,12 +56,18 @@ export default function CallToActionSection() {
     },
   };
 
+=======
+>>>>>>> 315e87c (:message)
   return (
     <section className="py-16 relative overflow-hidden">
       <div className="container mx-auto px-4 relative z-10">
         <motion.div
           className="relative bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl py-16 px-8 md:px-16 text-center overflow-hidden"
+<<<<<<< HEAD
           variants={containerVariants}
+=======
+          variants={containerVariantsTwo}
+>>>>>>> 315e87c (:message)
           initial="hidden"
           whileInView="visible"
           whileHover="hover"
@@ -108,7 +120,11 @@ export default function CallToActionSection() {
           <div className="relative z-10">
             <motion.h2
               className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight"
+<<<<<<< HEAD
               variants={itemVariants}
+=======
+              variants={itemVariantsTwo}
+>>>>>>> 315e87c (:message)
             >
               Ready to share your{" "}
               <span className="relative">
@@ -120,7 +136,11 @@ export default function CallToActionSection() {
 
             <motion.p
               className="text-blue-100 mb-10 max-w-2xl mx-auto text-lg"
+<<<<<<< HEAD
               variants={itemVariants}
+=======
+              variants={itemVariantsTwo}
+>>>>>>> 315e87c (:message)
             >
               Join our thriving community of writers and readers. Create an
               account today to start sharing your knowledge and connect with
@@ -129,7 +149,11 @@ export default function CallToActionSection() {
 
             <motion.div
               className="flex flex-col sm:flex-row justify-center gap-6"
+<<<<<<< HEAD
               variants={itemVariants}
+=======
+              variants={itemVariantsTwo}
+>>>>>>> 315e87c (:message)
             >
               <motion.div
                 variants={buttonVariants}
@@ -174,7 +198,11 @@ export default function CallToActionSection() {
 
             <motion.div
               className="mt-10 flex items-center justify-center gap-6 text-white/80"
+<<<<<<< HEAD
               variants={itemVariants}
+=======
+              variants={itemVariantsTwo}
+>>>>>>> 315e87c (:message)
             >
               <div className="flex items-center gap-2">
                 <svg

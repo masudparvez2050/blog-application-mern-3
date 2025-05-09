@@ -4,7 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
+<<<<<<< HEAD
 import { motion, AnimatePresence } from "framer-motion";
+=======
+import { motion } from "framer-motion";
+import { getContainerVariants, getItemVariants } from "../utils/animation";
+>>>>>>> 315e87c (:message)
 import {
   FaUsers,
   FaNewspaper,
@@ -30,6 +35,12 @@ import {
   FaTag,
 } from "react-icons/fa";
 
+<<<<<<< HEAD
+=======
+
+const containerVariants = getContainerVariants(0.5); // custom stagger
+const itemVariants = getItemVariants({ y: 20, duration: 0.8 }); // custom values
+>>>>>>> 315e87c (:message)
 export default function AdminDashboard() {
   const { isAuthenticated, loading, isAdmin, logout, user } = useAuth();
   const router = useRouter();
@@ -95,6 +106,7 @@ export default function AdminDashboard() {
     router.push("/login");
   };
 
+<<<<<<< HEAD
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -118,6 +130,8 @@ export default function AdminDashboard() {
       },
     },
   };
+=======
+>>>>>>> 315e87c (:message)
 
   if (loading || isLoading) {
     return (

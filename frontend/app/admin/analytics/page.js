@@ -9,7 +9,10 @@ import {
   FaUsers,
   FaNewspaper,
   FaComments,
+<<<<<<< HEAD
   FaUserShield,
+=======
+>>>>>>> 315e87c (:message)
   FaArrowLeft,
   FaEye,
   FaThumbsUp,
@@ -30,7 +33,13 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+<<<<<<< HEAD
 
+=======
+import {getContainerVariants, getItemVariants,} from "../utils/animation";
+import {contentGrowthData, engagementData, chartOptions} from "../data/TestData";
+import {getEngagementData} from "../data/TestData";
+>>>>>>> 315e87c (:message)
 // Register Chart.js components
 ChartJS.register(
   CategoryScale,
@@ -42,6 +51,12 @@ ChartJS.register(
   Legend
 );
 
+<<<<<<< HEAD
+=======
+const containerVariants = getContainerVariants(0.5); // custom stagger
+const itemVariants = getItemVariants({ y: 20, duration: 0.8 }); // custom values
+
+>>>>>>> 315e87c (:message)
 export default function AdminAnalytics() {
   const { isAuthenticated, loading, isAdmin } = useAuth();
   const router = useRouter();
@@ -95,6 +110,7 @@ export default function AdminAnalytics() {
     }
   };
 
+<<<<<<< HEAD
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -117,6 +133,9 @@ export default function AdminAnalytics() {
       },
     },
   };
+=======
+
+>>>>>>> 315e87c (:message)
 
   if (loading || isLoading) {
     return (
@@ -134,6 +153,7 @@ export default function AdminAnalytics() {
 
   // Format labels for charts (months)
   const labels = analytics.postsPerMonth?.map((item) => item.month) || [];
+<<<<<<< HEAD
 
   // Chart data for content growth
   const contentGrowthData = {
@@ -228,6 +248,10 @@ export default function AdminAnalytics() {
       },
     },
   };
+=======
+  getEngagementData(labels)
+
+>>>>>>> 315e87c (:message)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/20 to-white mt-10">

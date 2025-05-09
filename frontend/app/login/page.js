@@ -7,6 +7,10 @@ import { useAuth } from "../context/AuthContext";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import FacebookLogin from "@greatsumini/react-facebook-login";
 import { motion } from "framer-motion";
+<<<<<<< HEAD
+=======
+import { getContainerVariants, getItemVariants } from "../utils/animation";
+>>>>>>> 315e87c (:message)
 import {
   FaFacebook,
   FaEye,
@@ -17,6 +21,13 @@ import {
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 
+<<<<<<< HEAD
+=======
+
+const containerVariants = getContainerVariants(0.5); // custom stagger
+const itemVariants = getItemVariants({ y: 20, duration: 0.8 }); // custom values
+
+>>>>>>> 315e87c (:message)
 // Component to handle search params retrieval
 function LoginContent() {
   const router = useRouter();
@@ -123,6 +134,7 @@ function LoginContent() {
     }
   };
 
+<<<<<<< HEAD
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -147,6 +159,9 @@ function LoginContent() {
       },
     },
   };
+=======
+
+>>>>>>> 315e87c (:message)
 
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-50 via-white to-pink-50">

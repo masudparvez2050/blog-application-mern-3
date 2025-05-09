@@ -6,7 +6,15 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { FaCheckCircle, FaTimesCircle, FaSpinner } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
+<<<<<<< HEAD
 
+=======
+import { getContainerVariants, getItemVariants } from "../../utils/animation";
+
+
+const containerVariants = getContainerVariants(0.5); // custom stagger
+const itemVariants = getItemVariants({ y: 20, duration: 0.8 }); // custom values
+>>>>>>> 315e87c (:message)
 export default function VerifyEmail() {
   const { token } = useParams();
   const router = useRouter();
@@ -81,6 +89,7 @@ export default function VerifyEmail() {
   }, [token, updateUser, logout, router]);
 
   // Animation variants
+<<<<<<< HEAD
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -102,6 +111,8 @@ export default function VerifyEmail() {
       },
     },
   };
+=======
+>>>>>>> 315e87c (:message)
 
   if (isVerifying) {
     return (

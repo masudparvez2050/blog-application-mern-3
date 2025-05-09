@@ -5,14 +5,23 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+<<<<<<< HEAD
+=======
+import { getContainerVariants, getItemVariants } from "@/app/utils/animation";
+>>>>>>> 315e87c (:message)
 import {
   FaPlus,
   FaEdit,
   FaTrash,
+<<<<<<< HEAD
   FaCheck,
   FaTimes,
   FaTag,
   FaChevronLeft,
+=======
+  FaTimes,
+  FaTag,
+>>>>>>> 315e87c (:message)
   FaSearch,
   FaSave,
   FaTachometerAlt,
@@ -21,6 +30,13 @@ import {
   FaEyeSlash,
 } from "react-icons/fa";
 
+<<<<<<< HEAD
+=======
+
+const containerVariants = getContainerVariants(0.5); // custom stagger
+const itemVariants = getItemVariants({ y: 10, duration: 0.8 }); // custom values
+
+>>>>>>> 315e87c (:message)
 export default function CategoryManagement() {
   const { isAuthenticated, isAdmin, loading } = useAuth();
   const router = useRouter();
@@ -312,6 +328,7 @@ export default function CategoryManagement() {
       category.slug.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+<<<<<<< HEAD
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -336,6 +353,9 @@ export default function CategoryManagement() {
     },
   };
 
+=======
+ 
+>>>>>>> 315e87c (:message)
   if (loading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">

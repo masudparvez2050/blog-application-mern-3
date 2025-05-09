@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import PostCard from "../shared/PostCard";
 import PostCardSkeleton from "../shared/PostCardSkeleton";
+<<<<<<< HEAD
+=======
+import "@/app/globals.css";
+>>>>>>> 315e87c (:message)
 
 export default function FeaturedPostsSection({ posts }) {
   const [activeTab, setActiveTab] = useState("all");
@@ -201,6 +205,7 @@ export default function FeaturedPostsSection({ posts }) {
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* Animation keyframes */}
       <style jsx>{`
         @keyframes fadeIn {
@@ -227,6 +232,10 @@ export default function FeaturedPostsSection({ posts }) {
           display: none;
         }
       `}</style>
+=======
+ 
+    
+>>>>>>> 315e87c (:message)
     </section>
   );
 }
