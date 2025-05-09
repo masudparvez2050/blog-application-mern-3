@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 
-<<<<<<< HEAD
 // export const metadata = {
 //   title: "About Us | Blog Application",
 //   description: "Learn more about our blog platform, mission, and team",
@@ -57,15 +56,6 @@ export default function AboutPage() {
         "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&h=200&auto=format&fit=crop",
     },
   ];
-=======
-import {getContainerVariants, getItemVariants,} from "../utils/animation";
-import { teamMembers, valueItem } from "../data/TestData";
-
-const containerVariants = getContainerVariants(0.3); // custom stagger
-const itemVariants = getItemVariants({ y: 40, duration: 0.8 }); // custom values
-
-export default function AboutPage() {
->>>>>>> 315e87c (:message)
 
   return (
     <div className="pt-16 min-h-screen bg-gradient-to-b from-white to-slate-50">
@@ -208,7 +198,6 @@ export default function AboutPage() {
             viewport={{ once: true, amount: 0.2 }}
             variants={containerVariants}
           >
-<<<<<<< HEAD
             {[
               {
                 icon: (
@@ -331,9 +320,6 @@ export default function AboutPage() {
                 desc: "We ensure that our platform treats all contributors equitably, with transparent policies and practices.",
               },
             ].map((value, i) => (
-=======
-            {valueItem.map((value, i) => (
->>>>>>> 315e87c (:message)
               <motion.div
                 key={i}
                 className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-shadow"

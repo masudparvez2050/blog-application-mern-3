@@ -5,10 +5,6 @@ import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-<<<<<<< HEAD
-=======
-import { getContainerVariants, getItemVariants, pulseAnimation } from "../utils/animation";
->>>>>>> 315e87c (:message)
 import {
   FaUser,
   FaEnvelope,
@@ -29,13 +25,6 @@ import {
   FaEyeSlash
 } from "react-icons/fa";
 
-<<<<<<< HEAD
-=======
-
-const containerVariants = getContainerVariants(0.5); // custom stagger
-const itemVariants = getItemVariants({ y: 20, duration: 0.8 }); // custom values
-
->>>>>>> 315e87c (:message)
 export default function Profile() {
   const {
     user,
@@ -244,7 +233,6 @@ export default function Profile() {
     }
   };
 
-<<<<<<< HEAD
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -272,9 +260,6 @@ export default function Profile() {
     scale: [1, 1.05, 1],
     transition: { duration: 1.5, repeat: Infinity }
   };
-=======
-
->>>>>>> 315e87c (:message)
 
   const getActivityStats = () => {
     return {

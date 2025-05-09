@@ -6,10 +6,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "../../context/AuthContext";
 import { motion } from "framer-motion";
-<<<<<<< HEAD
-=======
-import { getContainerVariants, getItemVariants } from "@/app/utils/animation";
->>>>>>> 315e87c (:message)
 import {
   FaUserShield,
   FaUser,
@@ -26,14 +22,6 @@ import {
   FaCheckCircle,
 } from "react-icons/fa";
 
-<<<<<<< HEAD
-=======
-
-
-const containerVariants = getContainerVariants(0.5); // custom stagger
-const itemVariants = getItemVariants({ y: 20, duration: 0.8 }); // custom values
-
->>>>>>> 315e87c (:message)
 export default function UsersManagement() {
   const { isAuthenticated, loading, isAdmin } = useAuth();
   const router = useRouter();
@@ -270,7 +258,6 @@ export default function UsersManagement() {
     }
   }, [errorMessage, successMessage]);
 
-<<<<<<< HEAD
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -292,9 +279,6 @@ export default function UsersManagement() {
       },
     },
   };
-=======
-
->>>>>>> 315e87c (:message)
 
   if (loading || (isLoading && users.length === 0)) {
     return (

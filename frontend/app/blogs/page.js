@@ -4,10 +4,6 @@ import { useState, useEffect } from "react";
 import { mockPosts } from "../data/mockPosts";
 import PostCard from "../components/shared/PostCard";
 import { motion } from "framer-motion";
-<<<<<<< HEAD
-=======
-import { getContainerVariants, getItemVariants } from "../utils/animation";
->>>>>>> 315e87c (:message)
 import {
   FaSearch,
   FaFilter,
@@ -16,12 +12,6 @@ import {
   FaRegSadTear,
 } from "react-icons/fa";
 
-<<<<<<< HEAD
-=======
-
-  const containerVariants = getContainerVariants(0.1); // custom stagger
-  const itemVariants = getItemVariants({ y: 20, duration: 0.8 }); // custom values
->>>>>>> 315e87c (:message)
 // Custom debounce hook
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -188,7 +178,6 @@ export default function BlogsList() {
     setCurrentPage(1); // Reset to first page when category changes
   };
 
-<<<<<<< HEAD
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -212,9 +201,6 @@ export default function BlogsList() {
       },
     },
   };
-=======
-
->>>>>>> 315e87c (:message)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white pt-16">

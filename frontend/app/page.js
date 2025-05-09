@@ -6,11 +6,6 @@ import HeroSection from "./components/home/HeroSection";
 import FeaturedPostsSection from "./components/home/FeaturedPostsSection";
 import RecentPostsSection from "./components/home/RecentPostsSection";
 import CallToActionSection from "./components/home/CallToActionSection";
-<<<<<<< HEAD
-=======
-import "@/app/globals.css";
-
->>>>>>> 315e87c (:message)
 
 export default function Home() {
   const [featuredPosts, setFeaturedPosts] = useState([]);
@@ -153,7 +148,6 @@ export default function Home() {
         </div>
       </div>
 
-<<<<<<< HEAD
       {/* CSS for additional animations */}
       <style jsx>{`
         .perspective-container {
@@ -172,9 +166,6 @@ export default function Home() {
           }
         }
       `}</style>
-=======
- 
->>>>>>> 315e87c (:message)
     </>
   );
 }

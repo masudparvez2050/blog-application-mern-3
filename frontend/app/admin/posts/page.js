@@ -6,10 +6,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-<<<<<<< HEAD
-=======
-import { getContainerVariants, getItemVariants } from "./../utils/animation";
->>>>>>> 315e87c (:message)
 import {
   FaNewspaper,
   FaEdit,
@@ -18,11 +14,8 @@ import {
   FaBan,
   FaArrowLeft,
   FaSearch,
-<<<<<<< HEAD
   FaSortAmountDown,
   FaSortAmountUp,
-=======
->>>>>>> 315e87c (:message)
   FaPlus,
   FaTimesCircle,
   FaCheckCircle,
@@ -36,15 +29,6 @@ import {
   FaEllipsisV,
 } from "react-icons/fa";
 
-<<<<<<< HEAD
-=======
-
-
-const containerVariants = getContainerVariants(0.5); // custom stagger
-const itemVariants = getItemVariants({ y: 20, duration: 0.8 }); // custom values
-
-
->>>>>>> 315e87c (:message)
 export default function PostsManagement() {
   const { isAuthenticated, loading, isAdmin } = useAuth();
   const router = useRouter();
@@ -115,22 +99,6 @@ export default function PostsManagement() {
     fetchPosts,
   ]);
 
-<<<<<<< HEAD
-=======
- 
-  // Clear messages after 5 seconds
-  useEffect(() => {
-    if (errorMessage || successMessage) {
-      const timer = setTimeout(() => {
-        setErrorMessage("");
-        setSuccessMessage("");
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [errorMessage, successMessage]);
-
-
->>>>>>> 315e87c (:message)
   const handleSearch = (e) => {
     e.preventDefault();
     setCurrentPage(1);
@@ -142,10 +110,6 @@ export default function PostsManagement() {
     setCurrentPage(1);
   };
 
-<<<<<<< HEAD
-=======
-  //check this funciotn define but not used
->>>>>>> 315e87c (:message)
   const handleSort = (field) => {
     if (field === sortField) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -277,7 +241,6 @@ export default function PostsManagement() {
       setModalAction("");
     }
   };
-<<<<<<< HEAD
 
   // Clear messages after 5 seconds
   useEffect(() => {
@@ -322,8 +285,6 @@ export default function PostsManagement() {
     exit: { opacity: 0 },
   };
 
-=======
->>>>>>> 315e87c (:message)
   // Format date using more modern format
   const formatDate = (dateString) => {
     const date = new Date(dateString);

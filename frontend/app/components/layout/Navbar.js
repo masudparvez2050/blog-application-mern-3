@@ -6,10 +6,6 @@ import { useAuth } from "../../context/AuthContext";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-<<<<<<< HEAD
-=======
-import{  navbarVariants,dropdownVariants,mobileMenuVariants,linkHoverVariants} from "../../utils/animation";
->>>>>>> 315e87c (:message)
 
 export default function Navbar() {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
@@ -47,7 +43,6 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownRef]);
 
-<<<<<<< HEAD
   const navbarVariants = {
     hidden: { opacity: 0, y: -20 },
     visible: {
@@ -117,8 +112,6 @@ export default function Navbar() {
       },
     },
   };
-=======
->>>>>>> 315e87c (:message)
 
   // Check if the current route is active
   const isActiveRoute = (route) => {

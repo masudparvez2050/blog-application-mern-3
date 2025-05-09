@@ -8,10 +8,6 @@ import { useAuth } from "../../context/AuthContext";
 import { mockFeaturedPostsDetails } from "@/app/data/mockPosts";
 import LikeDislikeButtons from "../../components/shared/LikeDislikeButtons";
 import { motion } from "framer-motion";
-<<<<<<< HEAD
-=======
-import{staggerContainer,fadeIn} from "./../utils/animation";
->>>>>>> 315e87c (:message)
 import {
   FaRegClock,
   FaRegEye,
@@ -216,7 +212,6 @@ export default function BlogPost({ params }) {
   const isAuthor = post && user && post.author._id === user._id;
   const isAdmin = user && user.role === "admin";
 
-<<<<<<< HEAD
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -235,9 +230,6 @@ export default function BlogPost({ params }) {
       },
     },
   };
-=======
- 
->>>>>>> 315e87c (:message)
 
   if (loading) {
     return (

@@ -5,10 +5,6 @@ import { useState, useEffect } from "react";
 import PostCard from "../shared/PostCard";
 import PostCardSkeleton from "../shared/PostCardSkeleton";
 import Image from "next/image";
-<<<<<<< HEAD
-=======
-import "@/app/globals.css";
->>>>>>> 315e87c (:message)
 
 export default function RecentPostsSection({ posts }) {
   const [isLoading, setIsLoading] = useState(true);
@@ -222,7 +218,6 @@ export default function RecentPostsSection({ posts }) {
         </div>
       </div>
 
-<<<<<<< HEAD
       {/* Animation keyframes */}
       <style jsx>{`
         @keyframes fadeIn {
@@ -240,9 +235,6 @@ export default function RecentPostsSection({ posts }) {
           animation: fadeIn 0.6s ease-out;
         }
       `}</style>
-=======
-    
->>>>>>> 315e87c (:message)
     </section>
   );
 }
