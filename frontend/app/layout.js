@@ -1,10 +1,7 @@
 import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "./context/AuthContext";
-import Navbar from "./components/layout/Navbar";
-import Footer from "./components/layout/Footer";
-import FloationgButton from "./components/layout/FloationgButton";
-import Toast from "./components/layout/Toast";
+import ClientLayout from "./components/layout/ClientLayout";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -29,13 +26,7 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen flex flex-col bg-gray-50 antialiased text-gray-600`}
       >
         <AuthProvider>
-          <Navbar />
-          <main className="flex-grow container mx-auto px-4 py-8">
-            {children}
-            <FloationgButton />
-          </main>
-          <Footer />
-          <Toast/>
+          <ClientLayout>{children}</ClientLayout>
         </AuthProvider>
       </body>
     </html>

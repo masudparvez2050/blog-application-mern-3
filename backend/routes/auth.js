@@ -18,6 +18,10 @@ router.post("/forgot-password", authController.forgotPassword);
 router.post("/reset-password/:resetToken", authController.resetPassword);
 router.get("/verify-reset-token/:resetToken", authController.verifyResetToken);
 
+// Token validation and refresh routes
+router.get("/validate-token", auth, authController.validateToken);
+router.post("/refresh-token", auth, authController.refreshToken);
+
 // Protected routes
 router.get("/profile", auth, authController.getProfile);
 router.put("/profile", auth, authController.updateProfile);

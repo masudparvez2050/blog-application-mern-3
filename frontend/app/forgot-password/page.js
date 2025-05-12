@@ -1,3 +1,32 @@
+// "use client";
+
+// import AuthPageLayout from "@/app/components/auth/AuthPageLayout";
+// import ForgotPasswordForm from "@/app/components/auth/ForgotPasswordForm";
+// import AuthHelpLinks from "@/app/components/auth/AuthHelpLinks";
+
+// /**
+//  * ForgotPassword Page - Allows users to request password reset links
+//  */
+// export default function ForgotPassword() {
+//   return (
+//     <AuthPageLayout
+//       title="Reset Your Password"
+//       subtitle="Enter your email address and we'll send you a link to reset your password."
+//       backLink={{ href: "/login", text: "Back to login" }}
+//     >
+//       <ForgotPasswordForm />
+
+//       <AuthHelpLinks
+//         links={[
+//           { href: "/contact", text: "Contact support" },
+//           { href: "/register", text: "Create account" },
+//           { href: "/login", text: "Sign in" },
+//         ]}
+//       />
+//     </AuthPageLayout>
+//   );
+// }
+
 "use client";
 
 import { useState } from "react";

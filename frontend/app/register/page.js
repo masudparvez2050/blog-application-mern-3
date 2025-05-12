@@ -1,3 +1,75 @@
+// "use client";
+
+// import { useEffect, useTransition } from "react";
+// import { useRouter, useSearchParams } from "next/navigation";
+// import { useAuth } from "../context/AuthContext";
+// import { toast } from "react-hot-toast";
+// import RegisterForm from "../components/auth/RegisterForm";
+// import AuthPageLayout from "../components/auth/AuthPageLayout";
+
+// export default function RegisterPage() {
+//   const router = useRouter();
+//   const searchParams = useSearchParams();
+//   const [isPending, startTransition] = useTransition();
+//   const redirectPath = searchParams.get("redirect") || "/dashboard";
+//   const { register, oauthLogin } = useAuth();
+
+//   const handleRegister = async (userData) => {
+//     try {
+//       await register(userData);
+//       toast.success("Registration successful!");
+//       startTransition(() => {
+//         router.push(redirectPath);
+//       });
+//     } catch (err) {
+//       toast.error(err.message || "Registration failed");
+//       throw err; // Re-throw to be handled by the form
+//     }
+//   };
+
+//   const handleGoogleLogin = async (credential) => {
+//     try {
+//       await oauthLogin("google", credential);
+//       toast.success("Google signup successful!");
+//       startTransition(() => {
+//         router.push(redirectPath);
+//       });
+//     } catch (err) {
+//       toast.error(err.message || "Google signup failed");
+//       throw err;
+//     }
+//   };
+
+//   const handleFacebookLogin = async (accessToken) => {
+//     try {
+//       await oauthLogin("facebook", accessToken);
+//       toast.success("Facebook signup successful!");
+//       startTransition(() => {
+//         router.push(redirectPath);
+//       });
+//     } catch (err) {
+//       toast.error(err.message || "Facebook signup failed");
+//       throw err;
+//     }
+//   };
+
+//   return (
+//     <AuthPageLayout
+//       title="Join our community"
+//       subtitle="Create an account to get started"
+//       backLink={{ href: "/", text: "Back to home" }}
+//     >
+//       <RegisterForm
+//         onSubmit={handleRegister}
+//         onGoogleLogin={handleGoogleLogin}
+//         onFacebookLogin={handleFacebookLogin}
+//         isLoading={isPending}
+//         redirectPath={redirectPath}
+//       />
+//     </AuthPageLayout>
+//   );
+// }
+
 "use client";
 
 import { useState, useEffect, useTransition, Suspense } from "react";
@@ -18,7 +90,6 @@ import {
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 
-// Component to handle search params retrieval
 function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -38,26 +109,6 @@ function RegisterContent() {
     password: false,
     confirmPassword: false,
   });
-  const [isFocused, setIsFocused] = useState({
-    name: false,
-    email: false,
-    password: false,
-    confirmPassword: false,
-  });
-
-  const handleFocus = (field) => {
-    setIsFocused((prev) => ({
-      ...prev,
-      [field]: true,
-    }));
-  };
-
-  const handleBlur = (field) => {
-    setIsFocused((prev) => ({
-      ...prev,
-      [field]: false,
-    }));
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -65,8 +116,6 @@ function RegisterContent() {
       ...formData,
       [name]: value,
     });
-
-    // Clear error when user types
     if (error) setError("");
   };
 
@@ -104,7 +153,6 @@ function RegisterContent() {
     setIsLoading(true);
 
     try {
-      // Remove confirmPassword since our API doesn't need it
       const { confirmPassword, ...userData } = formData;
       await register(userData);
       toast.success("Registration successful!");
@@ -138,7 +186,6 @@ function RegisterContent() {
   const handleFacebookLogin = async (response) => {
     try {
       setIsLoading(true);
-      // Check if the response has an accessToken
       if (response.accessToken) {
         await oauthLogin("facebook", response.accessToken);
         toast.success("Facebook signup successful!");
@@ -156,194 +203,148 @@ function RegisterContent() {
     }
   };
 
-  // Animation variants
   const containerVariants = {
-    hidden: { opacity: 0 },
+    hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
+      y: 0,
       transition: {
-        staggerChildren: 0.12,
-        delayChildren: 0.1,
+        staggerChildren: 0.1,
+        delayChildren: 0.2,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { opacity: 0, y: 10 },
     visible: {
-      y: 0,
       opacity: 1,
+      y: 0,
       transition: {
         type: "spring",
         stiffness: 100,
-        damping: 10,
+        damping: 15,
       },
     },
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-50 via-white to-pink-50">
-      {/* Background decorative elements */}
-      <div className="absolute w-full h-full top-0 left-0 overflow-hidden -z-10">
-        <div className="absolute top-20 right-[10%] w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute top-40 left-[10%] w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 right-[30%] w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+    <div className="min-h-screen flex items-center justify-center py-24 px-4 sm:px-6 lg:px-8 bg-gray-50 bg-[linear-gradient(135deg,#f5f7fa_0%,#e4e7eb_100%)]">
+      {/* Subtle decorative elements */}
+      <div className="absolute inset-0 overflow-hidden -z-10">
+        <div className="absolute top-20 left-20 w-64 h-64 bg-indigo-100 rounded-full filter blur-3xl opacity-30 animate-float"></div>
+        <div className="absolute bottom-20 right-20 w-72 h-72 bg-blue-100 rounded-full filter blur-3xl opacity-30 animate-float animation-delay-3000"></div>
       </div>
 
       <motion.div
-        className="max-w-md w-full"
+        className="max-w-md w-full bg-white/80 backdrop-blur-md border border-gray-100/50 rounded-2xl shadow-xl p-8"
         initial="hidden"
         animate="visible"
         variants={containerVariants}
       >
-        <motion.div variants={itemVariants} className="text-center mb-8">
-          <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-500">
+        <motion.div variants={itemVariants} className="text-center mb-4">
+          <h2 className="text-3xl font-semibold text-gray-900">
             Create Account
           </h2>
-          <p className="mt-3 text-base text-gray-600">
-            Join our blog community and start sharing your thoughts
-          </p>
+          <p className="mt-2 text-sm text-gray-600">Join our community</p>
         </motion.div>
 
         {error && (
           <motion.div
             variants={itemVariants}
-            className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm backdrop-blur-sm bg-opacity-80"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            className="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded-md text-sm text-red-700 flex items-center gap-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           >
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-red-500"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
-              </div>
-            </div>
+            <svg
+              className="h-5 w-5 text-red-500"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            {error}
           </motion.div>
         )}
 
-        <motion.div
-          variants={itemVariants}
-          className="backdrop-blur-sm bg-white bg-opacity-70 py-8 px-6 shadow-2xl sm:rounded-2xl sm:px-10 border border-gray-100/50"
-        >
-          <form className="space-y-5" onSubmit={handleSubmit}>
+        <form className="space-y-3" onSubmit={handleSubmit}>
+          <motion.div variants={itemVariants}>
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Full Name
+            </label>
             <div className="relative">
-              <div
-                className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 transition-all duration-300 ${
-                  isFocused.name || formData.name
-                    ? "text-blue-600 -translate-y-9 text-xs"
-                    : ""
-                }`}
-              >
-                <FaUser className="inline mr-1" />
-                <span>Full Name</span>
-              </div>
+              <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 id="name"
                 name="name"
                 type="text"
                 autoComplete="name"
                 required
-                className={`appearance-none block w-full px-4 py-3.5 border ${
-                  error
-                    ? "border-red-300"
-                    : isFocused.name
-                    ? "border-blue-500"
-                    : "border-gray-300"
-                } rounded-xl bg-white/50 placeholder-transparent focus:outline-none focus:ring-2 ${
-                  error ? "focus:ring-red-200" : "focus:ring-blue-200"
-                } focus:border-blue-500 transition-all duration-200`}
+                className="appearance-none block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                 value={formData.name}
                 onChange={handleChange}
-                onFocus={() => handleFocus("name")}
-                onBlur={() => handleBlur("name")}
-                placeholder="Full Name"
+                placeholder="Enter your name"
               />
             </div>
+          </motion.div>
 
+          <motion.div variants={itemVariants}>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Email Address
+            </label>
             <div className="relative">
-              <div
-                className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 transition-all duration-300 ${
-                  isFocused.email || formData.email
-                    ? "text-blue-600 -translate-y-9 text-xs"
-                    : ""
-                }`}
-              >
-                <FaEnvelope className="inline mr-1" />
-                <span>Email Address</span>
-              </div>
+              <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 id="email"
                 name="email"
                 type="email"
                 autoComplete="email"
                 required
-                className={`appearance-none block w-full px-4 py-3.5 border ${
-                  error
-                    ? "border-red-300"
-                    : isFocused.email
-                    ? "border-blue-500"
-                    : "border-gray-300"
-                } rounded-xl bg-white/50 placeholder-transparent focus:outline-none focus:ring-2 ${
-                  error ? "focus:ring-red-200" : "focus:ring-blue-200"
-                } focus:border-blue-500 transition-all duration-200`}
+                className="appearance-none block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                 value={formData.email}
                 onChange={handleChange}
-                onFocus={() => handleFocus("email")}
-                onBlur={() => handleBlur("email")}
-                placeholder="Email Address"
+                placeholder="Enter your email"
               />
             </div>
+          </motion.div>
 
+          <motion.div variants={itemVariants}>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Password
+            </label>
             <div className="relative">
-              <div
-                className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 transition-all duration-300 ${
-                  isFocused.password || formData.password
-                    ? "text-blue-600 -translate-y-9 text-xs"
-                    : ""
-                }`}
-              >
-                <FaLock className="inline mr-1" />
-                <span>Password</span>
-              </div>
+              <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 id="password"
                 name="password"
                 type={showPassword.password ? "text" : "password"}
                 autoComplete="new-password"
                 required
-                className={`appearance-none block w-full px-4 py-3.5 border ${
-                  error
-                    ? "border-red-300"
-                    : isFocused.password
-                    ? "border-blue-500"
-                    : "border-gray-300"
-                } rounded-xl bg-white/50 placeholder-transparent focus:outline-none focus:ring-2 ${
-                  error ? "focus:ring-red-200" : "focus:ring-blue-200"
-                } focus:border-blue-500 transition-all duration-200 pr-10`}
+                className="appearance-none block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                 value={formData.password}
                 onChange={handleChange}
-                onFocus={() => handleFocus("password")}
-                onBlur={() => handleBlur("password")}
-                placeholder="Password"
+                placeholder="Enter your password"
               />
               <button
                 type="button"
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 onClick={() => togglePasswordVisibility("password")}
                 aria-label={
                   showPassword.password ? "Hide password" : "Show password"
@@ -355,46 +356,35 @@ function RegisterContent() {
                   <FaEye className="h-5 w-5" />
                 )}
               </button>
-              <p className="mt-1 text-xs text-gray-500 ml-1">
-                Must be at least 6 characters
-              </p>
             </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Must be at least 6 characters
+            </p>
+          </motion.div>
 
+          <motion.div variants={itemVariants}>
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Confirm Password
+            </label>
             <div className="relative">
-              <div
-                className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 transition-all duration-300 ${
-                  isFocused.confirmPassword || formData.confirmPassword
-                    ? "text-blue-600 -translate-y-9 text-xs"
-                    : ""
-                }`}
-              >
-                <FaLock className="inline mr-1" />
-                <span>Confirm Password</span>
-              </div>
+              <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 id="confirmPassword"
                 name="confirmPassword"
                 type={showPassword.confirmPassword ? "text" : "password"}
                 autoComplete="new-password"
                 required
-                className={`appearance-none block w-full px-4 py-3.5 border ${
-                  error
-                    ? "border-red-300"
-                    : isFocused.confirmPassword
-                    ? "border-blue-500"
-                    : "border-gray-300"
-                } rounded-xl bg-white/50 placeholder-transparent focus:outline-none focus:ring-2 ${
-                  error ? "focus:ring-red-200" : "focus:ring-blue-200"
-                } focus:border-blue-500 transition-all duration-200 pr-10`}
+                className="appearance-none block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                onFocus={() => handleFocus("confirmPassword")}
-                onBlur={() => handleBlur("confirmPassword")}
-                placeholder="Confirm Password"
+                placeholder="Confirm your password"
               />
               <button
                 type="button"
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 onClick={() => togglePasswordVisibility("confirmPassword")}
                 aria-label={
                   showPassword.confirmPassword
@@ -409,151 +399,152 @@ function RegisterContent() {
                 )}
               </button>
             </div>
+          </motion.div>
 
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={isLoading || isPending}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 font-medium disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-lg shadow-md shadow-indigo-500/30"
-              >
-                {isLoading || isPending ? (
-                  <span className="flex items-center">
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Creating account...
-                  </span>
-                ) : (
-                  <span className="flex items-center">
-                    Create Account
-                    <FaArrowRight className="ml-2 opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                  </span>
-                )}
-              </button>
-            </div>
-          </form>
-
-          <div className="mt-7">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300/50"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white bg-opacity-70 text-gray-500 backdrop-blur-sm">
-                  Or continue with
+          <motion.div variants={itemVariants}>
+            <button
+              type="submit"
+              disabled={isLoading || isPending}
+              className="w-full flex justify-center items-center mt-4 py-3 px-4 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+            >
+              {isLoading || isPending ? (
+                <span className="flex items-center">
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Creating account...
                 </span>
-              </div>
-            </div>
+              ) : (
+                <span className="flex items-center">
+                  Create Account
+                  <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+                </span>
+              )}
+            </button>
+          </motion.div>
+        </form>
 
-            <div className="mt-6 grid grid-cols-2 gap-4">
-              <div className="transform hover:scale-105 transition-transform">
-                <GoogleOAuthProvider
-                  clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
-                >
-                  <GoogleLogin
-                    onSuccess={handleGoogleLogin}
-                    onError={() =>
-                      setError("Google login failed. Please try again.")
-                    }
-                    useOneTap
-                    type="standard"
-                    width="100%"
-                    logo_alignment="center"
-                    shape="pill"
-                    text="signup_with"
-                  />
-                </GoogleOAuthProvider>
-              </div>
-              <div className="transform hover:scale-105 transition-transform">
-                <FacebookLogin
-                  appId={process.env.NEXT_PUBLIC_FACEBOOK_APP_ID}
-                  autoLoad={false}
-                  fields="name,email,picture"
-                  callback={handleFacebookLogin}
-                  render={(renderProps) => (
-                    <button
-                      onClick={renderProps.onClick}
-                      className="w-full inline-flex justify-center items-center py-2.5 px-4 border border-gray-300 rounded-full shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-                      disabled={isLoading}
-                    >
-                      <FaFacebook className="h-5 w-5 text-blue-600 mr-2" />
-                      <span>Facebook</span>
-                    </button>
-                  )}
-                />
-              </div>
+        <motion.div variants={itemVariants} className="mt-3">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-3 bg-white text-gray-500">
+                Or continue with
+              </span>
             </div>
           </div>
 
-          <div className="mt-7 text-center">
-            <p className="text-sm text-gray-600">
-              Already have an account?{" "}
-              <Link
-                href="/login"
-                className="font-semibold text-blue-600 hover:text-blue-700 hover:underline transition-all duration-200"
+          <div className="mt-3 grid grid-cols-2 gap-4">
+            <motion.div variants={itemVariants}>
+              <GoogleOAuthProvider
+                clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
               >
-                Sign in instead
-              </Link>
-            </p>
+                <GoogleLogin
+                  onSuccess={handleGoogleLogin}
+                  onError={() =>
+                    setError("Google signup failed. Please try again.")
+                  }
+                  useOneTap
+                  type="standard"
+                  width="100%"
+                  logo_alignment="center"
+                  shape="rectangular"
+                  text="signup_with"
+                  size="medium"
+                />
+              </GoogleOAuthProvider>
+            </motion.div>
+            <motion.div variants={itemVariants}>
+              <FacebookLogin
+                appId={process.env.NEXT_PUBLIC_FACEBOOK_APP_ID}
+                autoLoad={false}
+                fields="name,email,picture"
+                callback={handleFacebookLogin}
+                render={(renderProps) => (
+                  <button
+                    onClick={renderProps.onClick}
+                    className="w-full flex justify-center items-center py-1 px-4 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
+                    disabled={isLoading}
+                  >
+                    <FaFacebook className="h-5 w-5 text-blue-600 mr-2" />
+                    <span>Facebook</span>
+                  </button>
+                )}
+              />
+            </motion.div>
           </div>
+        </motion.div>
 
-          <div className="mt-5 text-xs text-center text-gray-500">
-            By signing up, you agree to our{" "}
-            <Link
-              href="/terms"
-              className="font-medium text-gray-700 hover:text-gray-900 hover:underline transition-colors"
-            >
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link
-              href="/privacy"
-              className="font-medium text-gray-700 hover:text-gray-900 hover:underline transition-colors"
-            >
-              Privacy Policy
-            </Link>
-          </div>
+        <motion.div
+          variants={itemVariants}
+          className="mt-6 text-center text-sm text-gray-600"
+        >
+          Already have an account?{" "}
+          <Link
+            href="/login"
+            className="font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+          >
+            Sign in
+          </Link>
+        </motion.div>
+
+        <motion.div
+          variants={itemVariants}
+          className="mt-4 text-center text-xs text-gray-600"
+        >
+          By signing up, you agree to our{" "}
+          <Link
+            href="/terms"
+            className="font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+          >
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link
+            href="/privacy"
+            className="font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+          >
+            Privacy Policy
+          </Link>
         </motion.div>
       </motion.div>
     </div>
   );
 }
 
-// Loading fallback component
 function RegisterLoadingFallback() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-50 via-white to-pink-50">
-      <div className="max-w-md w-full text-center">
-        <div className="relative w-20 h-20 mx-auto">
-          <div className="absolute top-0 w-full h-full rounded-full border-4 border-indigo-200 opacity-30"></div>
-          <div className="absolute top-0 w-full h-full rounded-full border-t-4 border-indigo-600 animate-spin"></div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 bg-[linear-gradient(135deg,#f5f7fa_0%,#e4e7eb_100%)]">
+      <div className="text-center">
+        <div className="relative w-16 h-16 mx-auto">
+          <div className="absolute inset-0 rounded-full border-4 border-indigo-100"></div>
+          <div className="absolute inset-0 rounded-full border-t-4 border-indigo-600 animate-spin"></div>
         </div>
-        <p className="mt-4 text-indigo-600 font-medium">
-          Setting up your account...
-        </p>
+        <p className="mt-4 text-gray-600">Setting up your account...</p>
       </div>
     </div>
   );
 }
 
-// Main component that wraps with Suspense
 export default function Register() {
   return (
     <Suspense fallback={<RegisterLoadingFallback />}>

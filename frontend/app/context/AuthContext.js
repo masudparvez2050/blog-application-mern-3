@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useState, useEffect, useContext } from "react";
+import { createContext, useState, useEffect, useContext, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { setCookie, removeCookie } from "../utils/cookieUtils";
 
 const AuthContext = createContext();
 
@@ -12,18 +13,117 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState("");
 
-  // Load user from local storage on initial render
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
+  // Helper function to consistently store authentication data
+  const storeAuthData = useCallback((token, userData) => {
+    // Set localStorage
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(userData));
 
-    if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
-    }
-
-    setLoading(false);
+    // Set cookies with consistent expiration (30 days to match JWT expiration)
+    setCookie("token", token, 30);
+    setCookie("user", userData, 30);
   }, []);
+
+  // Load user from local storage and validate token
+  useEffect(() => {
+    const validateStoredAuth = async () => {
+      const storedUser = localStorage.getItem("user");
+      const token = localStorage.getItem("token");
+
+      if (storedUser && token) {
+        try {
+          // Verify token with the backend
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/auth/validate-token`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (response.ok) {
+            setUser(JSON.parse(storedUser));
+            setIsAuthenticated(true);
+          } else {
+            // Clear invalid auth data
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            removeCookie("token");
+            removeCookie("user");
+          }
+        } catch (err) {
+          console.error("Token validation error:", err);
+        }
+      }
+      setLoading(false);
+    };
+
+    validateStoredAuth();
+  }, []);
+
+  // Periodically refresh token to prevent expiration
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Token refresh mechanism (moved inside useEffect to fix the dependency warning)
+      const refreshToken = async () => {
+        try {
+          const currentToken = localStorage.getItem("token");
+          if (!currentToken) return;
+
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/auth/refresh-token`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${currentToken}`,
+              },
+            }
+          );
+
+          const data = await response.json();
+          if (response.ok) {
+            storeAuthData(data.token, data.user || user);
+          }
+        } catch (err) {
+          console.error("Token refresh failed:", err);
+        }
+      };
+
+      const refreshInterval = setInterval(refreshToken, 1000 * 60 * 60 * 24); // daily refresh
+      return () => clearInterval(refreshInterval);
+    }
+  }, [isAuthenticated, user, storeAuthData]);
+
+  // Synchronize authentication state across tabs
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === "token") {
+        // Token was changed or removed in another tab
+        if (!e.newValue) {
+          // Token was removed, log out in this tab too
+          setUser(null);
+          setIsAuthenticated(false);
+          if (
+            window.location.pathname.startsWith("/admin") ||
+            window.location.pathname.startsWith("/dashboard")
+          ) {
+            router.push("/login");
+          }
+        } else if (e.newValue !== localStorage.getItem("token")) {
+          // Token changed in another tab
+          const storedUser = localStorage.getItem("user");
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+            setIsAuthenticated(true);
+          }
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [router]);
 
   // Login function for normal email/password login
   const login = async (userData) => {
@@ -45,9 +145,8 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || "Failed to login");
       }
 
-      // Store token and user data
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      // Store authentication data consistently
+      storeAuthData(data.token, data.user);
 
       setUser(data.user);
       setIsAuthenticated(true);
@@ -80,9 +179,8 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || "OAuth login failed");
       }
 
-      // Store token and user data
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      // Use consistent storage method
+      storeAuthData(data.token, data.user);
 
       setUser(data.user);
       setIsAuthenticated(true);
@@ -113,9 +211,8 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || "Registration failed");
       }
 
-      // Store token and user data
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      // Use consistent storage method
+      storeAuthData(data.token, data.user);
 
       setUser(data.user);
       setIsAuthenticated(true);
@@ -128,8 +225,15 @@ export const AuthProvider = ({ children }) => {
 
   // Logout function
   const logout = () => {
+    // Clear localStorage data
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+
+    // Clear cookies
+    removeCookie("token");
+    removeCookie("user");
+
+    // Reset state
     setUser(null);
     setIsAuthenticated(false);
     router.push("/");
@@ -157,10 +261,13 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || "Failed to update profile");
       }
 
-      // Update local storage
-      localStorage.setItem("user", JSON.stringify(data));
+      // Use consistent storage method if there's a new token
       if (data.token) {
-        localStorage.setItem("token", data.token);
+        storeAuthData(data.token, data);
+      } else {
+        // Just update the user data
+        localStorage.setItem("user", JSON.stringify(data));
+        setCookie("user", data, 30);
       }
 
       setUser(data);
@@ -176,6 +283,7 @@ export const AuthProvider = ({ children }) => {
     if (user) {
       const updatedUser = { ...user, ...partialUserData };
       localStorage.setItem("user", JSON.stringify(updatedUser));
+      setCookie("user", updatedUser, 30);
       setUser(updatedUser);
     }
   };

@@ -4,30 +4,37 @@ const User = require("../models/User");
 // Middleware to verify JWT token and authenticate users
 const auth = async (req, res, next) => {
   try {
+   
+
     // Get token from the Authorization header
     const authHeader = req.header("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      
       return res
         .status(401)
         .json({ message: "Authentication failed. No token provided." });
     }
 
     const token = authHeader.replace("Bearer ", "");
+    
 
     // Verify token
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET || "your_jwt_secret"
     );
+    
 
     // Find user with the id from the token
     const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
+     
       return res.status(401).json({ message: "User not found" });
     }
 
     if (!user.isActive) {
+      
       return res
         .status(401)
         .json({
@@ -36,11 +43,31 @@ const auth = async (req, res, next) => {
         });
     }
 
+    // Check if user is admin for admin routes
+    if (req.path.startsWith('/admin/') && user.role !== 'admin') {
+      
+      return res.status(403).json({
+        message: "Access denied. Admin privileges required.",
+        details: {
+          userRole: user.role,
+          requiredRole: "admin",
+          path: req.path
+        }
+      });
+    }
+
+    
+
     // Add user to request object
     req.user = user;
     next();
   } catch (error) {
-    console.error("Auth middleware error:", error.message);
+    console.error("Auth middleware error:", {
+      error: error.message,
+      token: req.header("Authorization"),
+      path: req.path,
+      method: req.method
+    });
     res.status(401).json({ message: "Authentication failed. Invalid token." });
   }
 };

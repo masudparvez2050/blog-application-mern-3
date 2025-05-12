@@ -13,6 +13,7 @@ const {
   getPostsWithComments,
   getSimilarPosts,
   getLikeStatus,
+  incrementViewCount,
 } = require("../controllers/postController");
 const { auth, admin } = require("../middleware/auth");
 
@@ -21,6 +22,7 @@ router.get("/", getAllPosts);
 router.get("/with-comments", getPostsWithComments);
 router.get("/:id/similar", getSimilarPosts); // New route for similar posts
 router.get("/:id", getPostById);
+router.put("/:id/view", incrementViewCount); // Public route for view count
 
 // User routes (requires authentication)
 router.post("/", auth, createPost);

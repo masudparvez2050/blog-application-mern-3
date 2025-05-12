@@ -141,10 +141,6 @@ exports.getPostById = async (req, res) => {
       .sort({ createdAt: -1 })
       .exec();
 
-    // Increment view count
-    post.views += 1;
-    await post.save();
-
     // Create a response object with post and its comments
     const postWithComments = {
       ...post._doc,
@@ -676,6 +672,31 @@ exports.getSimilarPosts = async (req, res) => {
     res.json(postsWithCommentCounts);
   } catch (error) {
     console.error("Error fetching similar posts:", error);
+    if (error.kind === "ObjectId") {
+      return res.status(404).json({ message: "Post not found" });
+    }
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Increment view count for a post
+// @route   PUT /api/posts/:id/view
+// @access  Public
+exports.incrementViewCount = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Increment view count
+    post.views += 1;
+    await post.save();
+
+    res.status(200).json({ views: post.views });
+  } catch (error) {
+    console.error("Increment view count error:", error);
     if (error.kind === "ObjectId") {
       return res.status(404).json({ message: "Post not found" });
     }

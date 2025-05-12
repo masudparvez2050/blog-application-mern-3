@@ -6,6 +6,9 @@ import HeroSection from "./components/home/HeroSection";
 import FeaturedPostsSection from "./components/home/FeaturedPostsSection";
 import RecentPostsSection from "./components/home/RecentPostsSection";
 import CallToActionSection from "./components/home/CallToActionSection";
+import { blogApi } from "./services/blogApi";
+import ErrorAlert from "./components/shared/ErrorAlert";
+
 
 export default function Home() {
   const [featuredPosts, setFeaturedPosts] = useState([]);
@@ -47,40 +50,31 @@ export default function Home() {
     try {
       setLoading(true);
 
-      // Fetch featured posts - now using isFeatured=true filter to get only posts marked as featured
-      const featuredResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/posts?limit=3&isFeatured=true`
-      );
+      // Use Promise.all to fetch both featured and recent posts simultaneously
+      const [featuredData, recentData] = await Promise.all([
+        blogApi.getPosts({ limit: 3, isFeatured: true }),
+        blogApi.getPosts({ limit: 6, sort: "-createdAt" }),
+      ]);
 
-      // Fetch recent posts - using limit=6 and sort by date for recent posts (increased from 3)
-      const recentResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/posts?limit=6&sort=createdAt`
-      );
-
-      if (!featuredResponse.ok) {
-        throw new Error("Failed to fetch featured posts");
-      }
-
-      if (!recentResponse.ok) {
-        throw new Error("Failed to fetch recent posts");
-      }
-
-      const featuredData = await featuredResponse.json();
-      const recentData = await recentResponse.json();
-
-      // Extract posts array from response
       setFeaturedPosts(featuredData.posts || []);
       setRecentPosts(recentData.posts || []);
       setError(null);
     } catch (err) {
       console.error("Error fetching posts:", err);
-      setError(err.message);
+      setError(
+        err.message || "Failed to load posts. Please try refreshing the page."
+      );
 
       // Load fallback data if API fails
-      import("@/app/data/mockPosts").then((module) => {
-        setFeaturedPosts(module.mockFeaturedPosts);
-        setRecentPosts(module.mockRecentPosts);
-      });
+      try {
+        const { mockFeaturedPosts, mockRecentPosts } = await import(
+          "@/app/data/mockPosts"
+        );
+        setFeaturedPosts(mockFeaturedPosts);
+        setRecentPosts(mockRecentPosts);
+      } catch (fallbackError) {
+        console.error("Failed to load fallback data:", fallbackError);
+      }
     } finally {
       setLoading(false);
     }
@@ -105,6 +99,11 @@ export default function Home() {
           <HeroSection />
         </div>
 
+        {/* Display error message if there's an error and no fallback data */}
+        {error && !featuredPosts.length && (
+          <ErrorAlert message={error} onRetry={fetchPosts} />
+        )}
+
         {/* Featured posts with slide-up animation */}
         <div
           ref={featuredRef}
@@ -118,6 +117,7 @@ export default function Home() {
             posts={featuredPosts}
             loading={loading}
             error={error}
+            onRetry={fetchPosts}
           />
         </div>
 
@@ -134,6 +134,7 @@ export default function Home() {
             posts={recentPosts}
             loading={loading}
             error={error}
+            onRetry={fetchPosts}
           />
         </div>
 

@@ -98,8 +98,8 @@ export default function RecentPostsSection({ posts }) {
                 >
                   <div className="relative aspect-[16/9] md:aspect-[21/9] rounded-2xl overflow-hidden transition-transform duration-300 group-hover:shadow-xl">
                     <Image
-                    fill
-                    sizes="(max-width: 1200px) 100vw, 1200px"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       src={
                         displayPosts[0].coverImage ||
                         "https://placehold.co/1200x630?text=Featured+Post"
@@ -128,7 +128,7 @@ export default function RecentPostsSection({ posts }) {
                           <div className="h-8 w-8 rounded-full bg-gray-300 overflow-hidden">
                             <Image
                               fill
-                              sizes="(max-width: 32px) 100vw, 32px"
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                               src={
                                 displayPosts[0].author?.avatar ||
                                 "https://placehold.co/100?text=A"

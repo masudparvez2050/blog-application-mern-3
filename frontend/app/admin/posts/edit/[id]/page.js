@@ -16,13 +16,12 @@ import {
   FaPlus,
   FaTag,
   FaCheck,
-  FaTimesCircle,
-  FaInfoCircle,
   FaTrash,
   FaLayerGroup,
   FaEye,
 } from "react-icons/fa";
 import dynamic from "next/dynamic";
+import { MessageAlert } from "@/app/components/shared/notifications/MessageAlert";
 
 // Import the rich text editor component dynamically to avoid SSR issues
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
@@ -45,6 +44,7 @@ export default function EditPost() {
   const [isLoading, setIsLoading] = useState(true);
   const [contentTab, setContentTab] = useState("edit"); // 'edit' or 'preview'
   const [dragActive, setDragActive] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Form data state
   const [postData, setPostData] = useState({
@@ -461,17 +461,17 @@ export default function EditPost() {
   if (loading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-50 pb-16">
       {/* Floating Action Bar */}
-      <div className="bg-white shadow-md border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex justify-between items-center">
-          <div className="flex items-center space-x-4">
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+          <div className="flex items-center">
             <Link
               href="/admin/posts"
               className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -480,735 +480,510 @@ export default function EditPost() {
               <FaArrowLeft className="h-5 w-5 text-gray-600" />
             </Link>
             <h1 className="text-xl font-bold text-gray-900 flex items-center">
-              <FaNewspaper className="mr-2 h-5 w-5 text-blue-600" />
+              <FaNewspaper className="mr-2 h-5 w-5 text-indigo-600" />
               Edit Post
             </h1>
           </div>
           <div className="flex space-x-2">
             <button
               type="button"
-              onClick={(e) => handleSubmit(e, "draft")}
-              disabled={isSubmitting}
-              className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <FaSave className="mr-2 h-4 w-4" />
-              Save Draft
-            </button>
-
-            <button
-              type="button"
-              onClick={(e) => handleSubmit(e, "published")}
-              disabled={isSubmitting}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <FaUpload className="mr-2 h-4 w-4" />
-              {isSubmitting ? "Publishing..." : "Publish"}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={isSubmitting || isDeleting}
+              className="inline-flex items-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
             >
               <FaTrash className="mr-2 h-4 w-4" />
-              {isDeleting ? "Deleting..." : "Delete"}
+              Delete
             </button>
+
+            <button
+              type="button"
+              onClick={(e) => handleSubmit(e, postData.status)}
+              disabled={isSubmitting || isDeleting}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              <FaSave className="mr-2 h-4 w-4" />
+              Save
+            </button>
+
+            {postData.status !== "published" && (
+              <button
+                type="button"
+                onClick={(e) => handleSubmit(e, "published")}
+                disabled={isSubmitting || isDeleting}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-indigo-600 to-blue-500 hover:from-indigo-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <FaCheck className="mr-2 h-4 w-4" />
+                Publish
+              </button>
+            )}
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {/* Messages */}
+      <main className="">
+        {/* Message Alerts */}
         {errorMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded"
-          >
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <FaTimesCircle className="h-5 w-5 text-red-500" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-red-700">{errorMessage}</p>
-              </div>
-            </div>
-          </motion.div>
+          <MessageAlert
+            message={errorMessage}
+            type="error"
+            onClose={() => setErrorMessage("")}
+          />
         )}
 
         {successMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="mb-4 bg-green-50 border-l-4 border-green-500 p-4 rounded"
-          >
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <FaCheck className="h-5 w-5 text-green-500" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-green-700">{successMessage}</p>
-              </div>
-            </div>
-          </motion.div>
+          <MessageAlert
+            message={successMessage}
+            type="success"
+            onClose={() => setSuccessMessage("")}
+          />
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Column - Post Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Title and Excerpt Card */}
+        <div className="mt-4">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+          >
+            {/* Main Content Area */}
             <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="bg-white shadow rounded-lg overflow-hidden"
+              variants={itemVariants}
+              className="lg:col-span-2 space-y-6"
             >
-              <div className="p-6">
-                {/* Post Title */}
-                <motion.div variants={itemVariants} className="mb-4">
-                  <input
-                    type="text"
-                    name="title"
-                    id="title"
-                    value={postData.title}
-                    onChange={handleChange}
-                    className="block w-full border-0 border-b-2 border-gray-200 focus:ring-0 focus:border-blue-600 text-2xl font-bold placeholder-gray-400"
-                    placeholder="Enter your post title"
-                    autoComplete="off"
-                  />
-                </motion.div>
-
-                {/* Post Excerpt */}
-                <motion.div variants={itemVariants}>
-                  <textarea
-                    name="excerpt"
-                    id="excerpt"
-                    rows={2}
-                    value={postData.excerpt}
-                    onChange={handleChange}
-                    className="block w-full border-0 focus:ring-0 text-gray-500 resize-none placeholder-gray-400"
-                    placeholder="Write a brief excerpt for your post..."
-                  />
-                </motion.div>
+              {/* Post Status Badge */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span
+                    className={`
+                    inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                    ${
+                      postData.status === "published"
+                        ? "bg-green-100 text-green-800"
+                        : postData.status === "draft"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : postData.status === "pending"
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-red-100 text-red-800"
+                    }
+                  `}
+                  >
+                    {postData.status.charAt(0).toUpperCase() +
+                      postData.status.slice(1)}
+                  </span>
+                  {postData.isFeatured && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                      <span className="mr-1">★</span> Featured
+                    </span>
+                  )}
+                </div>
               </div>
-            </motion.div>
 
-            {/* Content Editor Card */}
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="bg-white shadow rounded-lg overflow-hidden"
-            >
-              {/* Editor Tabs */}
-              <div className="border-b border-gray-200">
-                <div className="flex">
+              {/* Title Input */}
+              <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                <label
+                  htmlFor="title"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Post Title
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  id="title"
+                  value={postData.title}
+                  onChange={handleChange}
+                  placeholder="Enter post title"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Content Editor with Tabs */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-100">
+                <div className="flex border-b border-gray-100">
                   <button
-                    type="button"
                     onClick={() => setContentTab("edit")}
-                    className={`py-3 px-6 inline-flex items-center ${
+                    className={`px-4 py-3 text-sm font-medium flex-1 text-center ${
                       contentTab === "edit"
-                        ? "border-b-2 border-blue-600 text-blue-600"
-                        : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                        ? "text-indigo-600 border-b-2 border-indigo-600"
+                        : "text-gray-500 hover:text-gray-700"
                     }`}
                   >
-                    <FaLayerGroup
-                      className={`mr-2 h-4 w-4 ${
-                        contentTab === "edit"
-                          ? "text-blue-600"
-                          : "text-gray-500"
-                      }`}
-                    />
-                    Edit
+                    Edit Content
                   </button>
                   <button
-                    type="button"
                     onClick={() => setContentTab("preview")}
-                    className={`py-3 px-6 inline-flex items-center ${
+                    className={`px-4 py-3 text-sm font-medium flex-1 text-center ${
                       contentTab === "preview"
-                        ? "border-b-2 border-blue-600 text-blue-600"
-                        : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                        ? "text-indigo-600 border-b-2 border-indigo-600"
+                        : "text-gray-500 hover:text-gray-700"
                     }`}
                   >
-                    <FaEye
-                      className={`mr-2 h-4 w-4 ${
-                        contentTab === "preview"
-                          ? "text-blue-600"
-                          : "text-gray-500"
-                      }`}
-                    />
                     Preview
                   </button>
                 </div>
-              </div>
-
-              {/* Editor Content */}
-              <div className="p-4">
-                {contentTab === "edit" ? (
-                  <motion.div variants={itemVariants}>
-                    <div className="min-h-[400px]">
-                      {typeof window !== "undefined" && (
-                        <ReactQuill
-                          theme="snow"
-                          value={postData.content}
-                          onChange={handleContentChange}
-                          modules={quillModules}
-                          className="h-[350px]"
-                          placeholder="Write your post content here..."
+                <div className="p-5">
+                  {contentTab === "edit" ? (
+                    <div className="min-h-[300px]">
+                      <ReactQuill
+                        value={postData.content}
+                        onChange={handleContentChange}
+                        modules={quillModules}
+                        className="h-full"
+                        placeholder="Write your post content here..."
+                      />
+                    </div>
+                  ) : (
+                    <div className="prose max-w-none min-h-[300px] p-4 border rounded-md bg-gray-50">
+                      {postData.content ? (
+                        <div
+                          dangerouslySetInnerHTML={{ __html: postData.content }}
                         />
+                      ) : (
+                        <p className="text-gray-400 italic">
+                          No content to preview
+                        </p>
                       )}
                     </div>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    variants={itemVariants}
-                    className="min-h-[400px] prose max-w-none p-4 border rounded-md"
-                  >
-                    {postData.content ? (
-                      <div
-                        dangerouslySetInnerHTML={{ __html: postData.content }}
-                      />
-                    ) : (
-                      <div className="text-gray-400 italic">
-                        Your preview will appear here once you start writing...
-                      </div>
-                    )}
-                  </motion.div>
-                )}
+                  )}
+                </div>
               </div>
+
+              {/* Excerpt */}
+              <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                <label
+                  htmlFor="excerpt"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Excerpt (Short summary)
+                </label>
+                <textarea
+                  name="excerpt"
+                  id="excerpt"
+                  rows="3"
+                  value={postData.excerpt}
+                  onChange={handleChange}
+                  placeholder="Brief summary of your post (shown in previews)"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                ></textarea>
+              </div>
+
+              {/* Post Stats (if available) */}
+              {postData._id && (
+                <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">
+                    Post Statistics
+                  </h3>
+                  <div className="flex space-x-6">
+                    <div className="flex items-center">
+                      <FaEye className="mr-2 h-4 w-4 text-gray-400" />
+                      <span className="text-sm text-gray-700">
+                        {postData.views || 0} Views
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <FaCheck className="mr-2 h-4 w-4 text-green-400" />
+                      <span className="text-sm text-gray-700">
+                        {postData.likes?.length || 0} Likes
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <FaTag className="mr-2 h-4 w-4 text-blue-400" />
+                      <span className="text-sm text-gray-700">
+                        {postData.commentCount || 0} Comments
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </motion.div>
 
-            {/* Cover Image Card */}
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="bg-white shadow rounded-lg overflow-hidden"
-            >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <label className="block text-lg font-medium text-gray-700">
-                    <FaImage className="inline mr-2 text-blue-600" /> Cover
-                    Image
-                  </label>
-                </div>
+            {/* Sidebar Options */}
+            <motion.div variants={itemVariants} className="space-y-6">
+              {/* Cover Image Upload */}
+              <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                  <FaImage className="mr-2 h-4 w-4 text-indigo-600" />
+                  Cover Image
+                </h3>
 
-                <motion.div
-                  variants={itemVariants}
+                <div
+                  className={`mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md ${
+                    dragActive
+                      ? "border-indigo-400 bg-indigo-50"
+                      : "border-gray-300"
+                  }`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
                   onDrop={handleDrop}
-                  className={`relative mt-1 border-2 ${
-                    dragActive
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-dashed border-gray-300"
-                  } rounded-lg transition-colors duration-200 ease-in-out`}
                 >
                   {imagePreview ? (
-                    <div className="relative">
-                      <div className="relative w-full h-64 mx-auto rounded-md overflow-hidden">
+                    <div className="w-full relative">
+                      <div className="relative h-48 w-full mb-3">
                         <Image
                           src={imagePreview}
-                          alt="Cover image preview"
+                          alt="Cover preview"
+                          className="rounded-md object-cover"
                           fill
-                          unoptimized={true}
-                          style={{ objectFit: "cover" }}
-                          className="transition-transform duration-300 hover:scale-105"
                         />
                       </div>
                       <button
                         type="button"
                         onClick={() => {
                           setImagePreview(null);
-                          setPostData({ ...postData, coverImage: null });
+                          setPostData({
+                            ...postData,
+                            coverImage: null,
+                          });
                         }}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 focus:outline-none shadow-lg"
-                        title="Remove image"
+                        className="bg-white rounded-full p-1 absolute top-2 right-2 shadow-md hover:bg-gray-100"
                       >
-                        <FaTimes className="h-4 w-4" />
+                        <FaTimes className="h-4 w-4 text-gray-600" />
                       </button>
                     </div>
                   ) : (
-                    <div className="px-6 pt-5 pb-6 flex items-center justify-center">
-                      <div className="space-y-1 text-center">
-                        <div className="flex flex-col items-center">
-                          <FaImage className="mx-auto h-12 w-12 text-gray-400" />
-                          <p className="mt-1 text-sm text-gray-600">
-                            Drag and drop an image, or
-                            <label
-                              htmlFor="cover-image-upload"
-                              className="relative cursor-pointer ml-1 text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
-                            >
-                              <span>browse</span>
-                              <input
-                                id="cover-image-upload"
-                                name="cover-image-upload"
-                                type="file"
-                                accept="image/*"
-                                className="sr-only"
-                                onChange={handleImageChange}
-                              />
-                            </label>
-                          </p>
-                          <p className="text-xs text-gray-500 mt-2">
-                            PNG, JPG, GIF up to 5MB
-                          </p>
-                        </div>
+                    <div className="space-y-1 text-center">
+                      <FaUpload className="mx-auto h-12 w-12 text-gray-300" />
+                      <div className="flex text-sm text-gray-600">
+                        <label
+                          htmlFor="cover-image"
+                          className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500"
+                        >
+                          <span>Upload a file</span>
+                          <input
+                            id="cover-image"
+                            name="cover-image"
+                            type="file"
+                            className="sr-only"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                          />
+                        </label>
+                        <p className="pl-1">or drag and drop</p>
                       </div>
+                      <p className="text-xs text-gray-500">
+                        PNG, JPG, GIF up to 10MB
+                      </p>
                     </div>
                   )}
-                </motion.div>
+                </div>
               </div>
-            </motion.div>
-          </div>
 
-          {/* Sidebar - Publication Settings */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Categories Card */}
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="bg-white shadow rounded-lg overflow-hidden"
-            >
-              <div className="p-6">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">
+              {/* Categories */}
+              <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                  <FaLayerGroup className="mr-2 h-4 w-4 text-indigo-600" />
                   Categories
-                </h2>
-
-                <motion.div variants={itemVariants}>
-                  {/* Selected Categories */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {postData.categories.map((category) => (
-                      <div
-                        key={category._id}
-                        className="bg-blue-100 text-blue-800 rounded-full px-3 py-1 text-sm flex items-center"
-                      >
-                        {category.name}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveCategory(category._id)}
-                          className="ml-2 text-blue-600 hover:text-blue-800 focus:outline-none"
-                        >
-                          <FaTimes className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                    {postData.categories.length === 0 && (
-                      <span className="text-gray-400 text-sm italic">
-                        No categories selected
-                      </span>
-                    )}
-                  </div>
-
-                  {showCategoryInput ? (
-                    <div className="mt-2 mb-4">
-                      <div className="flex">
-                        <input
-                          type="text"
-                          className="flex-1 border border-gray-300 rounded-l-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-                          placeholder="New category name"
-                          value={newCategory}
-                          onChange={(e) => setNewCategory(e.target.value)}
-                        />
-                        <button
-                          type="button"
-                          onClick={handleAddNewCategory}
-                          className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-r-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                          <FaPlus className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowCategoryInput(false);
-                            setNewCategory("");
-                          }}
-                          className="ml-2 inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                          <FaTimes className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <select
-                        className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm mb-2"
-                        onChange={handleCategoryChange}
-                        value=""
-                      >
-                        <option value="" disabled>
-                          Select a category
-                        </option>
-                        {categories.map((category) => (
-                          <option key={category._id} value={category._id}>
-                            {category.name}
-                          </option>
-                        ))}
-                        <option value="add-new">+ Add New Category</option>
-                      </select>
-                    </>
-                  )}
-                  {!showCategoryInput && (
-                    <button
-                      type="button"
-                      onClick={() => setShowCategoryInput(true)}
-                      className="text-blue-600 text-sm hover:text-blue-800 flex items-center"
-                    >
-                      <FaPlus className="h-3 w-3 mr-1" /> Add New Category
-                    </button>
-                  )}
-                </motion.div>
-              </div>
-            </motion.div>
-
-            {/* Tags Card */}
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="bg-white shadow rounded-lg overflow-hidden"
-            >
-              <div className="p-6">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Tags</h2>
-
-                <motion.div variants={itemVariants}>
-                  {/* Selected Tags */}
-                  <div className="flex flex-wrap gap-2 mb-4 min-h-[40px]">
-                    {postData.tags.map((tag) => (
-                      <div
-                        key={tag}
-                        className="bg-gray-100 text-gray-800 rounded-full px-3 py-1 text-sm flex items-center"
-                      >
-                        <FaTag className="h-3 w-3 mr-1 text-gray-500" />
-                        {tag}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveTag(tag)}
-                          className="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                        >
-                          <FaTimes className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
+                </h3>
+                {showCategoryInput ? (
                   <div className="flex mt-2">
                     <input
                       type="text"
-                      className="flex-1 border border-gray-300 rounded-l-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-                      placeholder="Add a tag and press Enter"
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      onKeyDown={handleKeyDown}
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      placeholder="New category name"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     />
                     <button
                       type="button"
-                      onClick={handleAddTag}
-                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-r-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      onClick={handleAddNewCategory}
+                      className="px-3 py-2 bg-indigo-600 text-white rounded-r-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
-                      <FaPlus className="h-4 w-4" />
+                      Add
                     </button>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500 flex items-center">
-                    <FaInfoCircle className="mr-1 h-3 w-3" /> Press Enter after
-                    each tag
-                  </p>
-                </motion.div>
+                ) : (
+                  <select
+                    onChange={handleCategoryChange}
+                    value=""
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="" disabled>
+                      Select a category
+                    </option>
+                    {categories.map((category) => (
+                      <option key={category._id} value={category._id}>
+                        {category.name}
+                      </option>
+                    ))}
+                    <option value="add-new">+ Add new category</option>
+                  </select>
+                )}
+
+                {/* Selected Categories */}
+                <div className="mt-2">
+                  {postData.categories.length > 0 ? (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {postData.categories.map((category) => (
+                        <span
+                          key={category._id}
+                          className="inline-flex items-center px-2 py-1 rounded-md text-sm bg-indigo-50 text-indigo-700"
+                        >
+                          {category.name}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCategory(category._id)}
+                            className="ml-1 text-indigo-500 hover:text-indigo-700"
+                          >
+                            <FaTimes className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 mt-1">
+                      No categories selected
+                    </p>
+                  )}
+                </div>
               </div>
-            </motion.div>
 
-            {/* Publish Settings Card */}
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="bg-white shadow rounded-lg overflow-hidden"
-            >
-              <div className="p-6">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">
-                  Publication Settings
-                </h2>
+              {/* Tags */}
+              <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                  <FaTag className="mr-2 h-4 w-4 text-indigo-600" />
+                  Tags
+                </h3>
+                <div className="flex mt-1">
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Add tag and press Enter"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddTag}
+                    className="px-3 py-2 bg-indigo-600 text-white rounded-r-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    Add
+                  </button>
+                </div>
 
-                {/* Status Option */}
-                <motion.div variants={itemVariants} className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
+                {/* Selected Tags */}
+                <div className="mt-2">
+                  {postData.tags.length > 0 ? (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {postData.tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-2 py-1 rounded-md text-sm bg-gray-100 text-gray-800"
+                        >
+                          #{tag}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveTag(tag)}
+                            className="ml-1 text-gray-500 hover:text-gray-700"
+                          >
+                            <FaTimes className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 mt-1">No tags added</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Featured Toggle */}
+              <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-gray-700 flex items-center">
+                    <span className="mr-2 text-yellow-500">★</span>
+                    Feature this post
+                  </h3>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="isFeatured"
+                      checked={postData.isFeatured}
+                      onChange={handleChange}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                   </label>
-                  <div className="flex flex-col space-y-2">
-                    <label
-                      className={`flex items-center p-3 border rounded-md cursor-pointer transition-colors ${
-                        postData.status === "draft"
-                          ? "bg-blue-50 border-blue-300 text-blue-800"
-                          : "border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="status"
-                        value="draft"
-                        checked={postData.status === "draft"}
-                        onChange={handleChange}
-                        className="sr-only"
-                      />
-                      <div className="flex items-center">
-                        <FaSave
-                          className={`mr-2 h-4 w-4 ${
-                            postData.status === "draft"
-                              ? "text-blue-600"
-                              : "text-gray-400"
-                          }`}
-                        />
-                        <span>Draft</span>
-                      </div>
-                    </label>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Featured posts are shown prominently on the homepage
+                </p>
+              </div>
 
-                    <label
-                      className={`flex items-center p-3 border rounded-md cursor-pointer transition-colors ${
-                        postData.status === "pending"
-                          ? "bg-yellow-50 border-yellow-300 text-yellow-800"
-                          : "border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="status"
-                        value="pending"
-                        checked={postData.status === "pending"}
-                        onChange={handleChange}
-                        className="sr-only"
-                      />
-                      <div className="flex items-center">
-                        <FaInfoCircle
-                          className={`mr-2 h-4 w-4 ${
-                            postData.status === "pending"
-                              ? "text-yellow-600"
-                              : "text-gray-400"
-                          }`}
-                        />
-                        <span>Pending Review</span>
-                      </div>
-                    </label>
-
-                    <label
-                      className={`flex items-center p-3 border rounded-md cursor-pointer transition-colors ${
-                        postData.status === "published"
-                          ? "bg-green-50 border-green-300 text-green-800"
-                          : "border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="status"
-                        value="published"
-                        checked={postData.status === "published"}
-                        onChange={handleChange}
-                        className="sr-only"
-                      />
-                      <div className="flex items-center">
-                        <FaUpload
-                          className={`mr-2 h-4 w-4 ${
-                            postData.status === "published"
-                              ? "text-green-600"
-                              : "text-gray-400"
-                          }`}
-                        />
-                        <span>Published</span>
-                      </div>
-                    </label>
-                  </div>
-                </motion.div>
-
-                {/* Featured Post Option */}
-                <motion.div variants={itemVariants} className="mb-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <label
-                        htmlFor="isFeatured"
-                        className="font-medium text-gray-700 cursor-pointer"
-                      >
-                        Featured Post
-                      </label>
-                      <div
-                        className="ml-2 text-gray-400 hover:text-gray-500"
-                        title="Featured posts appear prominently on the homepage"
-                      >
-                        <FaInfoCircle className="h-4 w-4" />
-                      </div>
-                    </div>
-                    <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                      <input
-                        type="checkbox"
-                        id="isFeatured"
-                        name="isFeatured"
-                        checked={postData.isFeatured}
-                        onChange={handleChange}
-                        className="absolute block w-6 h-6 bg-white border-4 rounded-full appearance-none cursor-pointer checked:right-0 checked:border-blue-600 focus:outline-none"
-                      />
-                      <label
-                        htmlFor="isFeatured"
-                        className={`block h-6 overflow-hidden rounded-full cursor-pointer ${
-                          postData.isFeatured ? "bg-blue-600" : "bg-gray-300"
-                        }`}
-                      ></label>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Action Buttons */}
-                <motion.div
-                  variants={itemVariants}
-                  className="flex flex-col space-y-2"
+              {/* Status Selection */}
+              <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+                <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                  <FaCheck className="mr-2 h-4 w-4 text-indigo-600" />
+                  Post Status
+                </h3>
+                <select
+                  name="status"
+                  value={postData.status}
+                  onChange={handleChange}
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 >
-                  <button
-                    type="button"
-                    onClick={(e) => handleSubmit(e, postData.status)}
-                    disabled={isSubmitting}
-                    className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <svg
-                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        Updating...
-                      </>
-                    ) : (
-                      <>
-                        <FaSave className="mr-2 h-4 w-4" />
-                        {postData.status === "published"
-                          ? "Update Published Post"
-                          : postData.status === "pending"
-                          ? "Submit for Review"
-                          : "Save Draft"}
-                      </>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    className="w-full inline-flex justify-center items-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                  >
-                    {isDeleting ? (
-                      <>
-                        <svg
-                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-red-700"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        Deleting...
-                      </>
-                    ) : (
-                      <>
-                        <FaTrash className="mr-2 h-4 w-4" />
-                        Delete Post
-                      </>
-                    )}
-                  </button>
-                  <Link
-                    href="/admin/posts"
-                    className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md text-sm text-center font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <FaTimes className="mr-2 h-4 w-4" />
-                    Cancel
-                  </Link>
-                </motion.div>
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="pending">Pending Review</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-2">
+                  {postData.status === "draft"
+                    ? "Save as draft to work on later"
+                    : postData.status === "pending"
+                    ? "Submit for review before publishing"
+                    : "Visible to all users"}
+                </p>
               </div>
             </motion.div>
-
-            {/* Post Stats Card */}
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="bg-white shadow rounded-lg overflow-hidden"
-            >
-              <div className="p-6">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">
-                  Post Statistics
-                </h2>
-
-                <motion.div variants={itemVariants} className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500">Created:</span>
-                    <span className="font-medium">
-                      {new Date().toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500">Last updated:</span>
-                    <span className="font-medium">
-                      {new Date().toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500">Views:</span>
-                    <span className="font-medium">{postData.views || 0}</span>
-                  </div>
-                  <div className="border-t border-gray-200 pt-3 mt-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-500">Status:</span>
-                      <span
-                        className={`font-medium px-2 py-1 rounded-full text-xs ${
-                          postData.status === "published"
-                            ? "bg-green-100 text-green-800"
-                            : postData.status === "pending"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-blue-100 text-blue-800"
-                        }`}
-                      >
-                        {postData.status === "published"
-                          ? "Published"
-                          : postData.status === "pending"
-                          ? "Pending Review"
-                          : "Draft"}
-                      </span>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
-            </motion.div>
-          </div>
+          </motion.div>
         </div>
       </main>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4">
+            <div
+              className="fixed inset-0 bg-black bg-opacity-30 transition-opacity"
+              onClick={() => setShowDeleteConfirm(false)}
+            ></div>
+
+            <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl z-10 transform transition-all">
+              <h3 className="text-lg font-medium text-red-600 mb-4">
+                Delete Post
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete this post? This action cannot be
+                undone.
+              </p>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  {isDeleting ? (
+                    <>
+                      <span className="inline-block animate-spin mr-2">◌</span>
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete Post"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

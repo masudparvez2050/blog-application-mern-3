@@ -14,8 +14,19 @@ config();
 // Initialize Express app
 const app = express();
 
-// Middleware
-app.use(cors());
+// Configure CORS with options
+const corsOptions = {
+  origin: [
+    "http://localhost:3000",
+    "https://blog-application-mern-3.vercel.app/",
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true, // Add this line to allow credentials
+};
+
+// Use CORS middleware with options
+app.use(cors(corsOptions));
 
 // Request logger middleware
 app.use(requestLogger);
@@ -35,6 +46,7 @@ const postRoutes = require("./routes/post");
 const commentRoutes = require("./routes/comment");
 const adminRoutes = require("./routes/admin");
 const categoryRoutes = require("./routes/category");
+const contactRoutes = require("./routes/contact"); // Add this line
 
 // Use routes
 app.use("/api/auth", authRoutes);
@@ -43,6 +55,7 @@ app.use("/api/posts", postRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/contact", contactRoutes); // Add this line
 
 // Default route
 app.get("/", (req, res) => {

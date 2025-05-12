@@ -10,7 +10,7 @@ const nextConfig = {
         protocol: "https",
         hostname: "randomuser.me",
       },
-        {
+      {
         protocol: "https",
         hostname: "ui-avatars.com",
       },
@@ -25,6 +25,10 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "placehold.co",
       },
     ],
     dangerouslyAllowSVG: true,

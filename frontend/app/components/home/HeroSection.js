@@ -120,6 +120,7 @@ export default function HeroSection() {
                   style={{ objectFit: "cover" }}
                   className="transition-transform duration-700 hover:scale-105"
                   priority
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
 
                 {/* Glowing effect on hover */}

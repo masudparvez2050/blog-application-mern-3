@@ -69,33 +69,6 @@ exports.register = async (req, res) => {
       `;
 
       try {
-        // // Check if we're in development mode or missing email credentials
-        // if (
-        //   process.env.NODE_ENV === "development" ||
-        //   !process.env.EMAIL_SERVER_USER ||
-        //   !process.env.EMAIL_SERVER_PASSWORD
-        // ) {
-        //   // Use logEmailInDevelopment function for development
-        //   logEmailInDevelopment(
-        //     {
-        //       to: user.email,
-        //       subject: "Please verify your email address",
-        //       html: message,
-        //     },
-        //     {
-        //       verificationToken,
-        //       verificationUrl,
-        //     }
-        //   );
-        // } else {
-        //   // Use sendEmail function for production
-        //   await sendEmail({
-        //     to: user.email,
-        //     subject: "Please verify your email address",
-        //     html: message,
-        //   });
-        // }
-
         // Use sendEmail function for production
         await sendEmail({
           to: user.email,
@@ -244,37 +217,6 @@ exports.resendVerification = async (req, res) => {
     `;
 
     try {
-      // Check if we're in development mode or missing email credentials
-      // if (
-      //   process.env.NODE_ENV === "development" ||
-      //   !process.env.EMAIL_SERVER_USER ||
-      //   !process.env.EMAIL_SERVER_PASSWORD
-      // ) {
-      //   // Use logEmailInDevelopment function for development
-      //   logEmailInDevelopment(
-      //     {
-      //       to: user.email,
-      //       subject: "Verify Your Email Address",
-      //       html: message,
-      //     },
-      //     {
-      //       verificationToken,
-      //       verificationUrl,
-      //     }
-      //   );
-
-      //   return res.status(200).json({
-      //     message: "Verification email has been sent",
-      //     // Include the token in development mode for testing
-      //     ...(process.env.NODE_ENV === "development" && {
-      //       devInfo: {
-      //         verificationToken,
-      //         verificationUrl,
-      //       },
-      //     }),
-      //   });
-      // }
-
       // Use sendEmail function for production
       await sendEmail({
         to: user.email,
@@ -597,39 +539,6 @@ exports.forgotPassword = async (req, res) => {
     `;
 
     try {
-      // Check if we're in development mode or missing email credentials
-      // if (
-      //   process.env.NODE_ENV === "development" ||
-      //   !process.env.EMAIL_SERVER_USER ||
-      //   !process.env.EMAIL_SERVER_PASSWORD
-      // ) {
-      //   // Use logEmailInDevelopment function for development
-      //   logEmailInDevelopment(
-      //     {
-      //       to: user.email,
-      //       subject: "Password Reset Request",
-      //       html: message,
-      //     },
-      //     {
-      //       resetToken,
-      //       resetUrl,
-      //     }
-      //   );
-
-      //   // Return success response
-      //   return res.status(200).json({
-      //     message:
-      //       "If an account with that email exists, a password reset link has been sent.",
-      //     // Include the token in development mode for testing
-      //     ...(process.env.NODE_ENV === "development" && {
-      //       devInfo: {
-      //         resetToken,
-      //         resetUrl,
-      //       },
-      //     }),
-      //   });
-      // }
-
       // Use sendEmail function for production
       await sendEmail({
         to: user.email,
@@ -765,6 +674,65 @@ exports.verifyResetToken = async (req, res) => {
     res.status(500).json({
       valid: false,
       message: "An error occurred while verifying token",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Verify if a token is valid
+// @route   GET /api/auth/validate-token
+// @access  Private
+exports.validateToken = async (req, res) => {
+  try {
+    // If auth middleware passes, the token is valid
+    // The user is already attached to the request by auth middleware
+    res.status(200).json({
+      valid: true,
+      user: {
+        _id: req.user._id,
+        name: req.user.name,
+        email: req.user.email,
+        role: req.user.role,
+        profilePicture: req.user.profilePicture,
+        isVerified: req.user.isVerified,
+      },
+    });
+  } catch (error) {
+    console.error("Token validation error:", error);
+    res.status(500).json({
+      valid: false,
+      message: "An error occurred while validating token",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Refresh JWT token
+// @route   POST /api/auth/refresh-token
+// @access  Private
+exports.refreshToken = async (req, res) => {
+  try {
+    // User is already authenticated via auth middleware
+    const user = req.user;
+
+    // Generate a new token
+    const newToken = generateToken(user._id);
+
+    res.json({
+      token: newToken,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profilePicture: user.profilePicture,
+        isVerified: user.isVerified,
+      },
+    });
+  } catch (error) {
+    console.error("Token refresh error:", error);
+    res.status(500).json({
+      message: "Failed to refresh token",
       error: error.message,
     });
   }

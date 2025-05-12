@@ -9,6 +9,8 @@ import LikeDislikeButtons from "./LikeDislikeButtons";
 export default function PostCard({ post }) {
   const [isHovered, setIsHovered] = useState(false);
 
+
+
   return (
     <div
       className="group h-full flex flex-col bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
@@ -66,6 +68,7 @@ export default function PostCard({ post }) {
                   alt={post.author.name}
                   fill
                   style={{ objectFit: "cover" }}
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
               </div>
               <div>
