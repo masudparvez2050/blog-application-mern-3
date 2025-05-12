@@ -19,6 +19,7 @@ const corsOptions = {
   origin: [
     "http://localhost:3000",
     "https://blog-application-mern-3.vercel.app",
+    "https://api-blog-application.vercel.app",
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
