@@ -1,26 +1,51 @@
 "use client";
 
-import {
-  FaUser,
-  FaEnvelope,
-  FaPen,
-  FaCheckCircle,
-  FaTimes,
-} from "react-icons/fa";
 import { motion } from "framer-motion";
+import { FaUser, FaEnvelope, FaPen } from "react-icons/fa";
+import { validateProfileData, getBioCharacterCount } from "../../utils/validations/profileValidation";
+import FormStatusIndicator from "../shared/FormStatusIndicator";
+import { useProfileForm } from "../../hooks/useProfileForm";
+import { useAutosave } from "../../hooks/useAutosave";
+import { useState, useEffect } from "react";
 
-/**
- * Profile form component for editing user information
- */
-const ProfileForm = ({
-  profileData,
-  handleChange,
-  isSubmitting,
-  isEditing,
-  setIsEditing,
-  handleSubmit,
-}) => {
-  // Animation variants
+const ProfileForm = ({ initialData, onSubmit }) => {
+  const {
+    profileData,
+    handleChange,
+    isSubmitting,
+    isEditing,
+    errors,
+    hasUnsavedChanges,
+    handleEdit,
+    handleCancel,
+    handleSubmit
+  } = useProfileForm(initialData, onSubmit);
+
+  const {
+    queueAutosave,
+    isSaving,
+    lastSaved,
+    error: autosaveError,
+    clearError
+  } = useAutosave(() => onSubmit(profileData));
+
+  const [bioCount, setBioCount] = useState({ current: 0, remaining: 500, maxLength: 500 });
+
+  // Update bio character count
+  useEffect(() => {
+    setBioCount(getBioCharacterCount(profileData.bio));
+  }, [profileData.bio]);
+
+  // Queue autosave when form changes
+  useEffect(() => {
+    if (hasUnsavedChanges && isEditing) {
+      const { isValid } = validateProfileData(profileData);
+      if (isValid) {
+        queueAutosave();
+      }
+    }
+  }, [profileData, hasUnsavedChanges, isEditing, queueAutosave]);
+
   const formItemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i) => ({
@@ -36,140 +61,158 @@ const ProfileForm = ({
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg p-6 border border-indigo-100/50">
-      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-        <div className="p-2 mr-2 rounded-lg bg-indigo-100 text-indigo-600">
-          <FaPen className="h-5 w-5" />
-        </div>
-        {isEditing ? "Edit Profile" : "Profile Information"}
-        <div className="ml-auto">
-          {!isEditing ? (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsEditing(true)}
-              className="text-sm flex items-center px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg font-medium transition-colors"
-            >
-              <FaPen className="mr-1 h-3 w-3" />
-              Edit
-            </motion.button>
-          ) : (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsEditing(false)}
-              className="text-sm flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
-            >
-              <FaTimes className="mr-1 h-3 w-3" />
-              Cancel
-            </motion.button>
-          )}
-        </div>
-      </h3>
+    <div className="relative bg-white/80 backdrop-blur-md rounded-lg p-6">
+      <FormStatusIndicator
+        isSaving={isSaving}
+        lastSaved={lastSaved}
+        error={autosaveError}
+        hasUnsavedChanges={hasUnsavedChanges}
+        onDismissError={clearError}
+      />
 
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-4">
-          <motion.div
-            variants={formItemVariants}
-            custom={0}
-            initial={isEditing ? "hidden" : "visible"}
-            animate="visible"
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <motion.div
+          variants={formItemVariants}
+          custom={0}
+          initial="hidden"
+          animate="visible"
+          className="relative"
+        >
+          <label 
+            htmlFor="name"
+            className="block text-sm font-medium text-gray-700 mb-1"
           >
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Name
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaUser className="h-4 w-4 text-gray-400" />
-              </div>
-              {isEditing ? (
-                <input
-                  type="text"
-                  name="name"
-                  value={profileData.name}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  required
-                />
-              ) : (
-                <div className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
-                  {profileData.name}
-                </div>
-              )}
+            Full Name
+          </label>
+          <div className="relative rounded-md shadow-sm">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FaUser className="h-4 w-4 text-gray-400" />
             </div>
-          </motion.div>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={profileData.name}
+              onChange={handleChange}
+              disabled={!isEditing}
+              className={`block w-full pl-10 pr-3 py-2 border ${
+                errors.name ? "border-red-500" : isEditing ? "border-gray-300" : "border-gray-200 bg-gray-50"
+              } rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors`}
+              placeholder="Enter your full name"
+            />
+            {errors.name && (
+              <p className="mt-1 text-sm text-red-500">{errors.name}</p>
+            )}
+          </div>
+        </motion.div>
 
-          <motion.div
-            variants={formItemVariants}
-            custom={1}
-            initial={isEditing ? "hidden" : "visible"}
-            animate="visible"
+        <motion.div
+          variants={formItemVariants}
+          custom={1}
+          initial="hidden"
+          animate="visible"
+          className="relative"
+        >
+          <label 
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700 mb-1"
           >
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaEnvelope className="h-4 w-4 text-gray-400" />
-              </div>
-              {isEditing ? (
-                <input
-                  type="email"
-                  name="email"
-                  value={profileData.email}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  required
-                />
-              ) : (
-                <div className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
-                  {profileData.email}
-                </div>
-              )}
+            Email Address
+          </label>
+          <div className="relative rounded-md shadow-sm">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FaEnvelope className="h-4 w-4 text-gray-400" />
             </div>
-          </motion.div>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={profileData.email}
+              onChange={handleChange}
+              disabled={!isEditing}
+              className={`block w-full pl-10 pr-3 py-2 border ${
+                errors.email ? "border-red-500" : isEditing ? "border-gray-300" : "border-gray-200 bg-gray-50"
+              } rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors`}
+              placeholder="Enter your email"
+            />
+            {errors.email && (
+              <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+            )}
+          </div>
+        </motion.div>
 
-          <motion.div
-            variants={formItemVariants}
-            custom={2}
-            initial={isEditing ? "hidden" : "visible"}
-            animate="visible"
-          >
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+        <motion.div
+          variants={formItemVariants}
+          custom={2}
+          initial="hidden"
+          animate="visible"
+          className="relative"
+        >
+          <div className="flex justify-between items-center mb-1">
+            <label 
+              htmlFor="bio"
+              className="block text-sm font-medium text-gray-700"
+            >
               Bio
             </label>
-            <div className="relative">
-              <div className="absolute top-3 left-3 flex items-start pointer-events-none">
-                <FaPen className="h-4 w-4 text-gray-400" />
-              </div>
-              {isEditing ? (
-                <textarea
-                  name="bio"
-                  value={profileData.bio}
-                  onChange={handleChange}
-                  rows={4}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Tell us a little about yourself..."
-                />
-              ) : (
-                <div className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 min-h-[96px]">
-                  {profileData.bio || "No bio provided"}
-                </div>
-              )}
+            <span className={`text-xs ${bioCount.remaining < 50 ? "text-red-500" : "text-gray-500"}`}>
+              {bioCount.remaining} characters remaining
+            </span>
+          </div>
+          <div className="relative rounded-md shadow-sm">
+            <div className="absolute top-3 left-3 flex items-start pointer-events-none">
+              <FaPen className="h-4 w-4 text-gray-400" />
             </div>
-          </motion.div>
+            <textarea
+              id="bio"
+              name="bio"
+              rows={4}
+              value={profileData.bio}
+              onChange={handleChange}
+              disabled={!isEditing}
+              maxLength={bioCount.maxLength}
+              className={`block w-full pl-10 pr-3 py-2 border ${
+                errors.bio ? "border-red-500" : isEditing ? "border-gray-300" : "border-gray-200 bg-gray-50"
+              } rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors`}
+              placeholder="Tell us a little about yourself..."
+            />
+            {errors.bio && (
+              <p className="mt-1 text-sm text-red-500">{errors.bio}</p>
+            )}
+          </div>
+          <p className="mt-1 text-xs text-gray-500">
+            Brief description for your profile. URLs are hyperlinked.
+          </p>
+        </motion.div>
 
-          {isEditing && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="mt-6 flex justify-end"
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="flex justify-end gap-3"
+        >
+          {!isEditing ? (
+            <button
+              type="button"
+              onClick={handleEdit}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
             >
+              <FaPen className="mr-2 h-4 w-4" />
+              Edit Profile
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+              >
+                Cancel
+              </button>
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                disabled={isSubmitting || Object.keys(errors).length > 0}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <>
@@ -196,15 +239,12 @@ const ProfileForm = ({
                     Saving...
                   </>
                 ) : (
-                  <>
-                    <FaCheckCircle className="mr-1.5 h-4 w-4" />
-                    Save Changes
-                  </>
+                  "Save Changes"
                 )}
               </button>
-            </motion.div>
+            </>
           )}
-        </div>
+        </motion.div>
       </form>
     </div>
   );
