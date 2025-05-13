@@ -1,6 +1,9 @@
 "use client";
 
 import { FaEnvelope } from "react-icons/fa";
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 /**
  * EmailInput Component - Reusable email input field with floating label
