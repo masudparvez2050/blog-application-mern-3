@@ -6,6 +6,9 @@ import DevModeInfo from "../shared/DevModeInfo";
 import EmailInput from "./EmailInput";
 import SubmitButton from "./SubmitButton";
 import { requestPasswordReset } from "@/app/services/authService";
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 /**
  * ForgotPasswordForm Component - Handles password reset requests
