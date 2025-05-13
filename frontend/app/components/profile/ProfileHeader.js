@@ -15,6 +15,7 @@ const ProfileHeader = ({
   isEditing,
   onImageChange,
 }) => {
+  console.log(profilePicture);
   return (
     <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden border border-indigo-100/50 transition-all hover:shadow-indigo-100">
       <div className="relative h-36 bg-gradient-to-r from-indigo-600 to-blue-500 overflow-hidden">
