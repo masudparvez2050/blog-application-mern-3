@@ -133,6 +133,36 @@ exports.getUserProfile = async (req, res) => {
   }
 };
 
+// Password validation - match frontend requirements
+const validatePassword = (password) => {
+  const errors = [];
+  
+  if (password.length < 8) {
+    errors.push("Password must be at least 8 characters long");
+  }
+  
+  if (!/[A-Z]/.test(password)) {
+    errors.push("Password must contain at least one uppercase letter");
+  }
+  
+  if (!/[a-z]/.test(password)) {
+    errors.push("Password must contain at least one lowercase letter");
+  }
+  
+  if (!/\d/.test(password)) {
+    errors.push("Password must contain at least one number");
+  }
+  
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    errors.push("Password must contain at least one special character");
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};
+
 // @desc    Update user profile
 // @route   PUT /api/users/profile
 // @access  Private
@@ -181,8 +211,18 @@ exports.updateUserProfile = async (req, res) => {
           .json({ message: "Current password is incorrect" });
       }
 
+      // Validate new password
+      const passwordValidation = validatePassword(req.body.password);
+      if (!passwordValidation.isValid) {
+        return res.status(400).json({
+          message: "Password validation failed",
+          errors: passwordValidation.errors
+        });
+      }
+
       // Hash new password
       user.password = await bcrypt.hash(req.body.password, 10);
+      user.passwordChangedAt = Date.now();
     }
 
     const updatedUser = await user.save();
